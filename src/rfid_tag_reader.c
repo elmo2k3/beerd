@@ -33,6 +33,16 @@ static gboolean rfid_timeout
 	return FALSE;
 }
 
+void rfid_tag_reader_set_callback(struct RfidTagReader *tag_reader, void *callback)
+{
+	tag_reader->callback = callback;
+}
+
+gchar *rfid_tag_reader_last_tag(struct RfidTagReader *tag_reader)
+{
+	return tag_reader->tagid;
+}
+
 static gboolean serialReceive
 (GIOChannel *channel, GIOCondition *condition, struct RfidTagReader *rfid_tag_reader)
 {
@@ -56,7 +66,11 @@ static gboolean serialReceive
 				/* check if old and new tagid are not equal */
 				if(g_strcmp0(rfid_tag_reader->tagid, rfid_tag_reader->last_tagid))
 				{
-                	fprintf(stdout,"tagid =  %s\n",rfid_tag_reader->tagid);
+					if(rfid_tag_reader->callback)
+					{
+						rfid_tag_reader->callback(rfid_tag_reader);
+					}
+                	//fprintf(stdout,"tagid =  %s\n",rfid_tag_reader->tagid);
 					g_strlcpy(rfid_tag_reader->last_tagid, 
 						rfid_tag_reader->tagid,
 						sizeof(rfid_tag_reader->last_tagid));

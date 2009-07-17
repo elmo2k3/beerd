@@ -22,12 +22,18 @@
 #include "configfile.h"
 #include "rfid_tag_reader.h"
 
+void tag_read(struct RfidTagReader *tag_reader)
+{
+	printf("tag read: %s\n",tag_reader);
+}
 
 int main(int argc, char *argv[])
 {
 	struct RfidTagReader *tag_reader;
 	config_load("beerd.conf");
 	tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
+	rfid_tag_reader_set_callback(tag_reader, tag_read);
+
 	if(tag_reader == NULL)
 	{
 		g_fprintf(stderr,"Error creating rfid_tag_reader: %s\n",

@@ -29,8 +29,11 @@ struct RfidTagReader
 	guint serial_port_watcher;
 	gchar error_string[1024];
 	gboolean timeout_active;
+	void (*callback)(void*);
 };
 
 extern struct RfidTagReader *rfid_tag_reader_new(char *serial_device);
+extern gchar *rfid_tag_reader_last_tag(struct RfidTagReader *tag_reader);
+extern void rfid_tag_reader_set_callback(struct RfidTagReader *tag_reader, void *callback);
 
 #endif
