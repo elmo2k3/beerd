@@ -23,11 +23,15 @@
  * Config file routines
  */
 
-#define CONFIG_DEFAULT_HAD_ACTIVATED 0
+#define CONFIG_DEFAULT_RFID_SERIAL_PORT "/dev/ttyUSB0"
+
+// how many seconds to wait, before the same tag is recognized again?
+#define CONFIG_DEFAULT_RFID_TIMEOUT 5
 
 struct _config
 {
 	char rfid_serial_port[128];
+	int rfid_timeout;
 }config;
 
 /**

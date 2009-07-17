@@ -2,5 +2,5 @@
 
 struct _beerd_state
 {
-	guint rfid_serial_port_watcher;
+//	guint rfid_serial_port_watcher;
 }beerd_state;

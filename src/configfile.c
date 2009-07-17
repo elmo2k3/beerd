@@ -31,8 +31,8 @@
 
 #include "configfile.h"
 
-#define NUM_PARAMS 1
-static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port"
+#define NUM_PARAMS 2
+static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout"
 		};
 
 int config_save(char *conf)
@@ -40,7 +40,8 @@ int config_save(char *conf)
 	FILE *config_file = fopen(conf,"w");
 	if(!config_file)
 		return 0;
-	fprintf(config_file,"rfid_serial_port = %d\n",config.rfid_serial_port);
+	fprintf(config_file,"rfid_serial_port = %s\n",config.rfid_serial_port);
+	fprintf(config_file,"rfid_timeout = %d\n",config.rfid_timeout);
 	fclose(config_file);
 	return 1;
 }
@@ -57,7 +58,8 @@ int config_load(char *conf)
 	memset(&config, 0, sizeof(config));
 	
 	/* default values */
-	strcpy(config.rfid_serial_port, "/dev/ttyUSB0");
+	strcpy(config.rfid_serial_port, CONFIG_DEFAULT_RFID_SERIAL_PORT);
+	config.rfid_timeout = CONFIG_DEFAULT_RFID_TIMEOUT;
 
 	config_file = fopen(conf,"r");
 	if(!config_file)
@@ -100,6 +102,9 @@ int config_load(char *conf)
 				/* serial port for rfid tag reader */
 				case 0: strncpy(config.rfid_serial_port,value,
 							sizeof(config.rfid_serial_port));
+						break;
+				/* timeout for rfid tag reader */
+				case 1: config.rfid_timeout = atoi(value);
 						break;
 			}
 		}
