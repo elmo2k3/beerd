@@ -49,13 +49,12 @@ static gboolean serialReceive
     gchar buf[2048];
     gsize bytes_read;
     gint i;
-	static gboolean timout_active;
     g_io_channel_read_chars(channel, buf, sizeof(buf), &bytes_read, NULL);
     buf[bytes_read] = '\0';
 
     for(i=0; i < bytes_read; i++)
     {
-        if(buf[i] > 47 && buf[i] < 91) // we only want to parse hex data
+        if(buf[i] > 47 && buf[i] < 91) // we want to parse hex data only
         {
             rfid_tag_reader->tagid[rfid_tag_reader->tagposition++] = buf[i];
             if(rfid_tag_reader->tagposition >= 10)

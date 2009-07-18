@@ -16,37 +16,20 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
+#ifndef __TAG_DATABASE_H__
+#define __TAG_DATABASE_H__
+
 #include <stdio.h>
 #include <glib.h>
+#include <sqlite3.h>
 
-#include "configfile.h"
-#include "rfid_tag_reader.h"
-#include "tag_database.h"
-
-void tag_read(struct RfidTagReader *tag_reader)
+struct TagDatabase
 {
-	printf("tag read: %s\n",rfid_tag_reader_last_tag(tag_reader));
-}
+    sqlite3 *db;
+    gchar error_string[1024];
+};
 
-int main(int argc, char *argv[])
-{
-	struct RfidTagReader *tag_reader;
-	struct TagDatabase *database;
+extern struct TagDatabase *tag_database_new(char *filename);
 
-	config_load("beerd.conf");
-
-	tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-	rfid_tag_reader_set_callback(tag_reader, tag_read);
-	if(tag_reader == NULL)
-	{
-		fprintf(stderr,"Error creating rfid_tag_reader: %s\n",
-			tag_reader->error_string);
-		return -1;
-	}
-
-	database = tag_database_new("beerd.sqlite3"); 
-
-    GMainLoop *loop = g_main_loop_new(NULL,FALSE);
-    g_main_loop_run(loop);
-    return 0;
-}
+#endif
