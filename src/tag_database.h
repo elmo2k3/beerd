@@ -48,6 +48,9 @@ extern struct TagDatabase *tag_database_new(char *filename);
 extern void tag_database_set_callback_auth_successfull(struct TagDatabase *database, void *callback);
 extern void tag_database_set_callback_auth_failed(struct TagDatabase *database, void *callback);
 extern gint tag_database_tag_exists(struct TagDatabase *database, gchar *tagid);
-extern struct TagUser *tag_database_get_user_by_tag(struct TagDatabase *database, gchar *tagid);
+extern struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar *tagid);
+extern gint tag_database_user_insert(struct TagDatabase *database, struct TagUser *user);
+extern gint tag_database_tag_insert(struct TagDatabase *database, gchar *tagid, gint user_id, gint permission);
+extern gint tag_database_action_insert(struct TagDatabase *database, gint action_id, gchar *value1, gchar *value2);
 
 #endif

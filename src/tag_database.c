@@ -150,7 +150,7 @@ static sqlite_int64 tag_database_get_user_id(struct TagDatabase *database, gchar
 	return 0;
 }
 
-struct TagUser *tag_database_get_user_by_tag(struct TagDatabase *database, gchar *tagid)
+struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar *tagid)
 {
 	int rc;
 	sqlite3_stmt *stmt;
@@ -191,3 +191,7 @@ struct TagUser *tag_database_get_user_by_tag(struct TagDatabase *database, gchar
 	return NULL;
 }
 
+gint tag_database_action_insert(struct TagDatabase *database, gint action_id, gchar *value1, gchar *value2)
+{
+	return 0;
+}

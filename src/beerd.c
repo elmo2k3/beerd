@@ -34,7 +34,7 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 	if(auth_successfull)
 	{
 		printf("auth successfull   ");
-		if((user = tag_database_get_user_by_tag(database, tag_reader->tagid)))
+		if((user = tag_database_user_get_by_tag(database, tag_reader->tagid)))
 			printf("nick = %s", user->nick);
 		printf("\n");
 	}
@@ -53,13 +53,11 @@ int main(int argc, char *argv[])
 	database = tag_database_new(config.sqlite_file); 
 
 	tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-	rfid_tag_reader_set_callback(tag_reader, tag_read, database);
 	if(tag_reader == NULL)
 	{
-		fprintf(stderr,"Error creating rfid_tag_reader: %s\n",
-			tag_reader->error_string);
 		return -1;
 	}
+	rfid_tag_reader_set_callback(tag_reader, tag_read, database);
 
     loop = g_main_loop_new(NULL,FALSE);
     g_main_loop_run(loop);
