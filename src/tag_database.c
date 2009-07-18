@@ -29,6 +29,8 @@
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
 
+#define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
+
 static int createDatabaseLayout(struct TagDatabase *database);
 
 extern struct TagDatabase *tag_database_new(char *filename)
@@ -191,7 +193,23 @@ struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar
 	return NULL;
 }
 
-gint tag_database_action_insert(struct TagDatabase *database, gint action_id, gchar *value1, gchar *value2)
+gint tag_database_action_insert
+(struct TagDatabase *database, time_t timestamp, gint action_id, gchar *value1, gchar *value2)
 {
-	return 0;
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, 2048, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error INSERT_ACTION_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_int64(stmt, 1, (sqlite3_int64)timestamp);
+	sqlite3_bind_int64(stmt, 2, (sqlite3_int64)action_id);
+	sqlite3_bind_text(stmt, 3, value1, -1, NULL);
+	sqlite3_bind_text(stmt, 4, value2, -1, NULL);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	return 1;
 }

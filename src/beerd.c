@@ -27,8 +27,11 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
 	struct TagUser *user;
 	gint auth_successfull;
+	time_t rawtime;
 	struct TagDatabase *database = (struct TagDatabase*)user_data;
-
+	
+	time(&rawtime);
+	tag_database_action_insert(database, rawtime, ACTION_TAG_READ, rfid_tag_reader_last_tag(tag_reader), NULL);
 	printf("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
 	auth_successfull = tag_database_tag_exists(database, tag_reader->tagid);
 	if(auth_successfull)
