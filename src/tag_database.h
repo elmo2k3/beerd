@@ -24,12 +24,30 @@
 #include <glib.h>
 #include <sqlite3.h>
 
+#include "rfid_tag_reader.h"
+
 struct TagDatabase
 {
     sqlite3 *db;
     gchar error_string[1024];
+    void (*auth_successfull)(void*);
+    void (*auth_failed)(void*);
+};
+
+struct TagUser
+{
+    gint id;
+    gchar name[128];
+    gchar surname[128];
+    gchar nick[128];
+    gchar email[128];
+    gint permission;
 };
 
 extern struct TagDatabase *tag_database_new(char *filename);
+extern void tag_database_set_callback_auth_successfull(struct TagDatabase *database, void *callback);
+extern void tag_database_set_callback_auth_failed(struct TagDatabase *database, void *callback);
+extern gint tag_database_tag_exists(struct TagDatabase *database, gchar *tagid);
+extern struct TagUser *tag_database_get_user_by_tag(struct TagDatabase *database, gchar *tagid);
 
 #endif

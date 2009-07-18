@@ -23,20 +23,37 @@
 #include "rfid_tag_reader.h"
 #include "tag_database.h"
 
-void tag_read(struct RfidTagReader *tag_reader)
+void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
-	printf("tag read: %s\n",rfid_tag_reader_last_tag(tag_reader));
+	struct TagUser *user;
+	gint auth_successfull;
+	struct TagDatabase *database = (struct TagDatabase*)user_data;
+
+	printf("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
+	auth_successfull = tag_database_tag_exists(database, tag_reader->tagid);
+	if(auth_successfull)
+	{
+		printf("auth successfull   ");
+		if((user = tag_database_get_user_by_tag(database, tag_reader->tagid)))
+			printf("nick = %s", user->nick);
+		printf("\n");
+	}
+	else
+		printf("auth not successfull\n");
 }
 
 int main(int argc, char *argv[])
 {
 	struct RfidTagReader *tag_reader;
 	struct TagDatabase *database;
+    GMainLoop *loop;
 
 	config_load("beerd.conf");
 
+	database = tag_database_new(config.sqlite_file); 
+
 	tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-	rfid_tag_reader_set_callback(tag_reader, tag_read);
+	rfid_tag_reader_set_callback(tag_reader, tag_read, database);
 	if(tag_reader == NULL)
 	{
 		fprintf(stderr,"Error creating rfid_tag_reader: %s\n",
@@ -44,9 +61,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	database = tag_database_new("beerd.sqlite3"); 
-
-    GMainLoop *loop = g_main_loop_new(NULL,FALSE);
+    loop = g_main_loop_new(NULL,FALSE);
     g_main_loop_run(loop);
+
     return 0;
 }

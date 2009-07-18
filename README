@@ -1,0 +1,3 @@
+Requirements:
+    - glib >= 2.16
+    - sqlite3

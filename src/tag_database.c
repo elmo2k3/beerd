@@ -18,12 +18,16 @@
  */
 #include <stdio.h>
 #include <glib.h>
+#include <glib/gprintf.h>
 #include "misc.h"
 #include "tag_database.h"
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
-#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT )"
+#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, permission INTEGER)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 INTEGER, action_value2 INTEGER)"
+
+#define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
+#define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
 
 static int createDatabaseLayout(struct TagDatabase *database);
 
@@ -91,5 +95,99 @@ static int createDatabaseLayout(struct TagDatabase *database)
 		return -1;
 	}
 	return 0;
+}
+
+void tag_database_set_callback_auth_successfull(struct TagDatabase *database, void *callback)
+{
+    database->auth_successfull = callback;
+}
+
+void tag_database_set_callback_auth_failed(struct TagDatabase *database, void *callback)
+{
+    database->auth_failed = callback;
+}
+
+gint tag_database_tag_exists(struct TagDatabase *database, gchar *tagid)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 2048, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, tagid, -1, NULL);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	if(rc == SQLITE_ROW)
+		return 1;
+	return 0;
+}
+
+static sqlite_int64 tag_database_get_user_id(struct TagDatabase *database, gchar *tagid)
+{
+	int rc;
+	sqlite_int64 user_id;
+	sqlite3_stmt *stmt;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 2048, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, tagid, -1, NULL);
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		user_id = sqlite3_column_int64(stmt, 1);
+		sqlite3_finalize(stmt);
+		return user_id;
+	}
+	sqlite3_finalize(stmt);
+	return 0;
+}
+
+struct TagUser *tag_database_get_user_by_tag(struct TagDatabase *database, gchar *tagid)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	sqlite3_int64 user_id;
+
+	struct TagUser *user = g_new0(struct TagUser, 1);
+	if(!user)
+		return NULL;
+
+	user_id = tag_database_get_user_id(database, tagid);
+	if(!user_id)
+	{
+		g_free(user);
+		return NULL;
+	}
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 2048, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_int64(stmt, 1, user_id);
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		user->id = (gint)user_id;
+		g_strlcpy(user->name, (gchar*)sqlite3_column_text(stmt,0), sizeof(user->name));
+		g_strlcpy(user->surname, (gchar*)sqlite3_column_text(stmt,1), sizeof(user->surname));
+		g_strlcpy(user->nick, (gchar*)sqlite3_column_text(stmt,2), sizeof(user->nick));
+		g_strlcpy(user->email, (gchar*)sqlite3_column_text(stmt,3), sizeof(user->email));
+		user->permission = (gint)sqlite3_column_int64(stmt,4);
+		sqlite3_finalize(stmt);
+		return user;
+	}
+	sqlite3_finalize(stmt);
+	g_free(user);
+	return NULL;
 }
 

@@ -33,9 +33,10 @@ static gboolean rfid_timeout
 	return FALSE;
 }
 
-void rfid_tag_reader_set_callback(struct RfidTagReader *tag_reader, void *callback)
+void rfid_tag_reader_set_callback(struct RfidTagReader *tag_reader, void *callback, void *user_data)
 {
 	tag_reader->callback = callback;
+	tag_reader->user_data = user_data;
 }
 
 gchar *rfid_tag_reader_last_tag(struct RfidTagReader *tag_reader)
@@ -67,7 +68,7 @@ static gboolean serialReceive
 				{
 					if(rfid_tag_reader->callback)
 					{
-						rfid_tag_reader->callback(rfid_tag_reader);
+						rfid_tag_reader->callback(rfid_tag_reader, rfid_tag_reader->user_data);
 					}
                 	//fprintf(stdout,"tagid =  %s\n",rfid_tag_reader->tagid);
 					g_strlcpy(rfid_tag_reader->last_tagid, 

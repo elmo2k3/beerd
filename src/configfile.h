@@ -27,11 +27,13 @@
 
 // how many seconds to wait, before the same tag is recognized again?
 #define CONFIG_DEFAULT_RFID_TIMEOUT 5
+#define CONFIG_DEFAULT_SQLITE_FILE "beerd.sqlite3"
 
 struct _config
 {
 	char rfid_serial_port[128];
 	int rfid_timeout;
+	char sqlite_file[128];
 }config;
 
 /**
