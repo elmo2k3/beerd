@@ -31,9 +31,9 @@
 
 #include "configfile.h"
 
-#define NUM_PARAMS 3
-static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout", "db_file"
-		};
+#define NUM_PARAMS 5
+static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout", "db_file",
+	"port","max_clients"	};
 
 int config_save(char *conf)
 {
@@ -43,6 +43,8 @@ int config_save(char *conf)
 	fprintf(config_file,"rfid_serial_port = %s\n",config.rfid_serial_port);
 	fprintf(config_file,"rfid_timeout = %d\n",config.rfid_timeout);
 	fprintf(config_file,"db_file = %s\n",config.sqlite_file);
+	fprintf(config_file,"port = %d\n",config.server_port);
+	fprintf(config_file,"max_clients = %d\n",config.max_clients);
 	fclose(config_file);
 	return 1;
 }
@@ -62,6 +64,8 @@ int config_load(char *conf)
 	strcpy(config.rfid_serial_port, CONFIG_DEFAULT_RFID_SERIAL_PORT);
 	config.rfid_timeout = CONFIG_DEFAULT_RFID_TIMEOUT;
 	strcpy(config.sqlite_file, CONFIG_DEFAULT_SQLITE_FILE);
+	config.server_port = CONFIG_DEFAULT_PORT;
+	config.max_clients = CONFIG_DEFAULT_MAX_CLIENTS;
 
 	config_file = fopen(conf,"r");
 	if(!config_file)
@@ -111,6 +115,12 @@ int config_load(char *conf)
 				/* sqlite database file */
 				case 2: strncpy(config.sqlite_file,value,
 							sizeof(config.sqlite_file));
+						break;
+				/* server listen port */
+				case 3: config.server_port = atoi(value);
+						break;
+				/* max number of clients */
+				case 4: config.max_clients = atoi(value);
 						break;
 			}
 		}

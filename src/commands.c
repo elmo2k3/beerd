@@ -16,38 +16,25 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __CONFIGFILE_H__
-#define __CONFIGFILE_H__
 
-/** @file configfile.h
- * Config file routines
- */
+#include <glib.h>
+#include "network.h"
+#include "commands.h"
 
-#define CONFIG_DEFAULT_RFID_SERIAL_PORT "/dev/ttyUSB0"
-
-// how many seconds to wait, before the same tag is recognized again?
-#define CONFIG_DEFAULT_RFID_TIMEOUT 5
-#define CONFIG_DEFAULT_SQLITE_FILE "beerd.sqlite3"
-#define CONFIG_DEFAULT_PORT 5335
-#define CONFIG_DEFAULT_MAX_CLIENTS 10
-
-struct _config
+struct command
 {
-	char rfid_serial_port[128];
-	int rfid_timeout;
-	char sqlite_file[128];
-	int server_port;
-	int max_clients;
-}config;
+	gchar *cmd;
+	gint min_params;
+	gint max_params;
+	void (*action)(struct client *client);
+};
 
-/**
- * @param *conf config file to load
- * @return 0 on failure, 1 on success
- */
-extern int config_load(char *conf);
-extern int config_save(char *conf);
+static void action_last_tagid(struct client *client);
 
-/* Default values */
+static struct command commands[] = {
+	{"last_tagid", 0, 0, action_last_tagid}
+	};
 
-#endif
-
+static void action_last_tagid(struct client *client)
+{
+}	

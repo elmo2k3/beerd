@@ -22,6 +22,7 @@
 #include "configfile.h"
 #include "rfid_tag_reader.h"
 #include "tag_database.h"
+#include "network.h"
 
 void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
 {
 	struct RfidTagReader *tag_reader;
 	struct TagDatabase *database;
+	struct NetworkServer *server;
     GMainLoop *loop;
 
 	config_load("beerd.conf");
@@ -62,6 +64,7 @@ int main(int argc, char *argv[])
 	}
 	rfid_tag_reader_set_callback(tag_reader, tag_read, database);
 
+	server = network_server_new(database);
     loop = g_main_loop_new(NULL,FALSE);
     g_main_loop_run(loop);
 

@@ -16,38 +16,30 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __CONFIGFILE_H__
-#define __CONFIGFILE_H__
+#ifndef __NETWORK_H__
+#define __NETWORK_H__
 
-/** @file configfile.h
- * Config file routines
- */
+#include <glib.h>
+#include "tag_database.h"
 
-#define CONFIG_DEFAULT_RFID_SERIAL_PORT "/dev/ttyUSB0"
+#define GREETING "Welcome to the Beernary Daemon 0.001\r\n"
 
-// how many seconds to wait, before the same tag is recognized again?
-#define CONFIG_DEFAULT_RFID_TIMEOUT 5
-#define CONFIG_DEFAULT_SQLITE_FILE "beerd.sqlite3"
-#define CONFIG_DEFAULT_PORT 5335
-#define CONFIG_DEFAULT_MAX_CLIENTS 10
-
-struct _config
+struct NetworkServer
 {
-	char rfid_serial_port[128];
-	int rfid_timeout;
-	char sqlite_file[128];
-	int server_port;
-	int max_clients;
-}config;
+	int fd;
+	guint listen_watch;
+	struct TagDatabase *database;
+};
 
-/**
- * @param *conf config file to load
- * @return 0 on failure, 1 on success
- */
-extern int config_load(char *conf);
-extern int config_save(char *conf);
+struct client
+{
+	guint num;
+	GIOChannel *channel;
+	guint source_id;
+	struct TagDatabase *database;
+};
 
-/* Default values */
+extern struct NetworkServer *network_server_new(struct TagDatabase *database);
 
 #endif
 
