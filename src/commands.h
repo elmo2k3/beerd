@@ -19,7 +19,13 @@
 #ifndef __COMMANDS_H__
 #define __COMMANDS_H__
 
+enum commands_status
+{
+    COMMANDS_OK,
+    COMMANDS_FAIL,
+    COMMANDS_DISCONNECT
+};
 
-extern gboolean commands_process(struct client *client);
+extern enum commands_status commands_process(struct client *client);
 #endif
 

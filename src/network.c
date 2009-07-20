@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <glib.h>
 #include <glib/gprintf.h>
@@ -59,34 +60,42 @@ static gboolean client_in_event
     if(status != G_IO_STATUS_NORMAL)
     {
         g_debug("client disconnect %d",status);
-        clients = g_list_remove(clients, client);
-        num_clients--;
-        if(client->source_id)
-        {
-            g_source_remove(client->source_id);
-            client->source_id = 0;
-        }
-        if(client->channel)
-        {
-            g_io_channel_unref(client->channel);
-            client->channel = NULL;
-            g_free(client);
-        }
+        network_client_disconnect(client);
     }
     else
     {
         if(g_strrstr(client->buf, "\n"))
         {
+            gint ret;
             client->buf_position = 0;
-            if(commands_process(client))
+            if((ret = commands_process(client)) == COMMANDS_OK)
                 g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL);
-            else
+            else if (ret == COMMANDS_FAIL)
                 g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL);
 
         }
     }
     return TRUE;
 }
+
+void network_client_disconnect(struct client *client)
+{
+    clients = g_list_remove(clients, client);
+    num_clients--;
+    if(client->source_id)
+    {
+        g_source_remove(client->source_id);
+        client->source_id = 0;
+    }
+    if(client->channel)
+    {
+        g_io_channel_unref(client->channel);
+        client->channel = NULL;
+        g_debug("client %d disconnected",client->num);
+        g_free(client);
+    }
+}
+
 
 static gboolean listen_in_event
 (GIOChannel *source, GIOCondition condition, gpointer data)
@@ -111,7 +120,7 @@ static gboolean listen_in_event
             close(fd);
             return FALSE;
         }
-        
+        g_debug("client %d connected",num_clients);    
         client = g_new0(struct client, 1);
         clients = g_list_prepend(clients, client);
         client->num = num_clients;
@@ -176,3 +185,22 @@ struct NetworkServer *network_server_new(struct TagDatabase *database)
     return server;
 }
 
+void network_client_printf(struct client *client, char *format, ...)
+{
+    va_list args, tmp;
+    int length;
+    gchar *buffer;
+
+    va_start(args, format);
+    va_copy(tmp, args);
+    length = vsnprintf(NULL, 0, format, tmp);
+    va_end(tmp);
+
+    if(length <= 0)
+        return;
+
+    buffer = g_malloc(length + 1);
+    vsnprintf(buffer, length + 1, format, args);
+    g_io_channel_write_chars(client->channel, buffer, length, NULL, NULL);
+    va_end(args);
+}

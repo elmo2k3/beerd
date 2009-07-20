@@ -28,43 +28,70 @@ struct command
 	gchar *cmd;
 	gint min_params;
 	gint max_params;
-	void (*action)(struct client *client);
+	enum commands_status (*action)(struct client *client);
 };
 
-static void action_last_tagid(struct client *client);
+static enum commands_status action_commands(struct client *client);
+static enum commands_status action_last_tagid(struct client *client);
+static enum commands_status action_disconnect(struct client *client);
 
-#define NUM_COMMANDS 1
+#define NUM_COMMANDS 3
 static struct command commands[] = {
-	{"last_tagid", 0, 0, action_last_tagid}
+	{"commands", 0, 0, action_commands},
+	{"last_tagid", 0, 0, action_last_tagid},
+	{"quit", 0, 0, action_disconnect}
 	};
 
-static void action_last_tagid(struct client *client)
+static enum commands_status action_disconnect(struct client *client)
+{
+	network_client_disconnect(client);
+	return COMMANDS_DISCONNECT;
+}
+
+static enum commands_status action_commands(struct client *client)
+{
+	int i;
+	network_client_printf(client,"Available commands:\r\n");
+	for(i=1; i< NUM_COMMANDS; i++)
+	{
+		network_client_printf(client,"%s\r\n",commands[i].cmd);
+	}
+	return COMMANDS_OK;
+}
+
+static enum commands_status action_last_tagid(struct client *client)
 {
 	time_t timestamp;
 	gchar *last_tag;
-	gsize bytes_written;
+	gchar date[256];
+	struct tm ptm;
 
 	last_tag = tag_database_tag_last_read(client->database, &timestamp);
-	g_io_channel_write_chars(client->channel, "last_tagid: ", 12, &bytes_written, NULL);
+	localtime_r(&timestamp, &ptm);
+	strftime(date, sizeof(date), "%c", &ptm);
+	
+	network_client_printf(client, "time_last_tagid: %s\r\n",date);
+	network_client_printf(client, "last_tagid: %s\r\n",last_tag);
+/*	g_io_channel_write_chars(client->channel, "last_tagid: ", 12, &bytes_written, NULL);
 	g_io_channel_write_chars(client->channel, last_tag, strlen(last_tag), &bytes_written, NULL);
-	g_io_channel_write_chars(client->channel, "\r\n", 2, &bytes_written, NULL);
+	g_io_channel_write_chars(client->channel, "\r\n", 2, &bytes_written, NULL);*/
+	return COMMANDS_OK;
 }
 
-gboolean commands_process(struct client *client)
+enum commands_status commands_process(struct client *client)
 {
 	int i;
-	gboolean found = FALSE;
 	gchar *pos;
+	gint ret;
 
-	found = FALSE;
+	ret = COMMANDS_FAIL;
 	for(i = 0;i < NUM_COMMANDS; i++)
 	{
 		pos = g_strstr_len(client->buf, -1, commands[i].cmd);
 		if(pos == client->buf) // command must be at the beginning of the line
 		{
-			commands[i].action(client);
-			found = TRUE;
+			ret = commands[i].action(client);
 		}
 	}
-	return found;
+	return ret;
 }
