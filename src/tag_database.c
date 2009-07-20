@@ -33,6 +33,7 @@
 
 #define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
 #define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission) VALUES (?,?,?,?,?,?,?,?,?)"
+#define INSERT_TAG_QUERY "INSERT INTO tags (tag,user_id,permission) VALUES (?,?,?)"
 
 static int createDatabaseLayout(struct TagDatabase *database);
 
@@ -187,7 +188,48 @@ struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar
 		g_strlcpy(user->surname, (gchar*)sqlite3_column_text(stmt,1), sizeof(user->surname));
 		g_strlcpy(user->nick, (gchar*)sqlite3_column_text(stmt,2), sizeof(user->nick));
 		g_strlcpy(user->email, (gchar*)sqlite3_column_text(stmt,3), sizeof(user->email));
+		user->age = atoi(sqlite3_column_text(stmt,4));
+		user->weight = atoi(sqlite3_column_text(stmt,5));
+		user->size = atoi(sqlite3_column_text(stmt,6));
+		user->gender = atoi(sqlite3_column_text(stmt,7));
 		user->permission = (gint)sqlite3_column_int64(stmt,4);
+		sqlite3_finalize(stmt);
+		return user;
+	}
+	sqlite3_finalize(stmt);
+	g_free(user);
+	return NULL;
+}
+
+struct TagUser *tag_database_user_get_by_id(struct TagDatabase *database, gint user_id)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+
+	struct TagUser *user = g_new0(struct TagUser, 1);
+	if(!user)
+		return NULL;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_int64(stmt, 1, (sqlite_int64)user_id);
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		user->id = (gint)user_id;
+		g_strlcpy(user->name, (gchar*)sqlite3_column_text(stmt,0), sizeof(user->name));
+		g_strlcpy(user->surname, (gchar*)sqlite3_column_text(stmt,1), sizeof(user->surname));
+		g_strlcpy(user->nick, (gchar*)sqlite3_column_text(stmt,2), sizeof(user->nick));
+		g_strlcpy(user->email, (gchar*)sqlite3_column_text(stmt,3), sizeof(user->email));
+		user->age = atoi(sqlite3_column_text(stmt,4));
+		user->weight = atoi(sqlite3_column_text(stmt,5));
+		user->size = atoi(sqlite3_column_text(stmt,6));
+		user->gender = atoi(sqlite3_column_text(stmt,7));
+		user->permission = (gint)sqlite3_column_int64(stmt,8);
 		sqlite3_finalize(stmt);
 		return user;
 	}
@@ -267,6 +309,26 @@ gint tag_database_user_insert
 	sqlite3_bind_int64(stmt, 7, (sqlite3_int64)user->size);
 	sqlite3_bind_int64(stmt, 8, (sqlite3_int64)user->gender);
 	sqlite3_bind_int64(stmt, 9, (sqlite3_int64)user->permission);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	return 1;
+}
+
+gint tag_database_tag_insert
+(struct TagDatabase *database, gchar *tagid, gint userid, gint permission)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	rc = sqlite3_prepare_v2(database->db, INSERT_TAG_QUERY, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error INSERT_TAG_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, tagid, -1, NULL);
+	sqlite3_bind_int64(stmt, 2, (sqlite3_int64)userid);
+	sqlite3_bind_int64(stmt, 3, (sqlite3_int64)permission);
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return 1;

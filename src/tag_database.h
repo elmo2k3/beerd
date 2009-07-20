@@ -81,4 +81,10 @@ extern gint tag_database_action_insert
 extern gchar *tag_database_tag_last_read
 (struct TagDatabase *database, time_t *timestamp);
 
+extern gint tag_database_tag_insert
+(struct TagDatabase *database, gchar *tagid, gint userid, gint permission);
+
+extern struct TagUser *tag_database_user_get_by_id
+(struct TagDatabase *database, gint user_id);
+
 #endif
