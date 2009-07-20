@@ -39,7 +39,10 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 	{
 		printf("auth successfull   ");
 		if((user = tag_database_user_get_by_tag(database, tag_reader->tagid)))
+		{
 			printf("nick = %s", user->nick);
+			g_free(user);
+		}
 		printf("\n");
 	}
 	else
