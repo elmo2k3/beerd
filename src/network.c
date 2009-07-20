@@ -74,6 +74,8 @@ static gboolean client_in_event
                 g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL);
 
         }
+        else if(client->buf_position == sizeof(client->buf))
+            client->buf_position = 0;
     }
     return TRUE;
 }
