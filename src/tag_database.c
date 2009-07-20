@@ -23,7 +23,7 @@
 #include "tag_database.h"
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
-#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, permission INTEGER)"
+#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 INTEGER, action_value2 INTEGER)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
@@ -32,6 +32,7 @@
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
 #define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
+#define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission) VALUES (?,?,?,?,?,?,?,?,?)"
 
 static int createDatabaseLayout(struct TagDatabase *database);
 
@@ -244,3 +245,30 @@ gchar *tag_database_tag_last_read
 	}
 	return ret;
 }
+
+gint tag_database_user_insert
+(struct TagDatabase *database, struct TagUser *user)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	rc = sqlite3_prepare_v2(database->db, INSERT_USER_QUERY, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error INSERT_USER_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, user->name, -1, NULL);
+	sqlite3_bind_text(stmt, 2, user->surname, -1, NULL);
+	sqlite3_bind_text(stmt, 3, user->nick, -1, NULL);
+	sqlite3_bind_text(stmt, 4, user->email, -1, NULL);
+	sqlite3_bind_int64(stmt, 5, (sqlite3_int64)user->age);
+	sqlite3_bind_int64(stmt, 6, (sqlite3_int64)user->weight);
+	sqlite3_bind_int64(stmt, 7, (sqlite3_int64)user->size);
+	sqlite3_bind_int64(stmt, 8, (sqlite3_int64)user->gender);
+	sqlite3_bind_int64(stmt, 9, (sqlite3_int64)user->permission);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	return 1;
+}
+

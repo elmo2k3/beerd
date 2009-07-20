@@ -46,6 +46,10 @@ struct TagUser
     gchar surname[128];
     gchar nick[128];
     gchar email[128];
+    gint age;
+    gint weight;
+    gint size;
+    gint gender;
     gint permission;
 };
 
