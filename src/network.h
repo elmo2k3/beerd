@@ -46,7 +46,7 @@ struct client
 };
 
 extern struct NetworkServer *network_server_new(struct TagDatabase *database);
-extern void network_client_printf(struct client *client, char *format, ...);
+extern gboolean network_client_printf(struct client *client, char *format, ...);
 extern void network_client_disconnect(struct client *client);
 
 #endif

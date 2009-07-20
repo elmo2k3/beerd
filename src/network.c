@@ -52,7 +52,13 @@ static gboolean client_in_event
     struct client *client = user_data;
     gsize bytes_read;
     GIOStatus status;
-   
+    gint ret;
+  
+    if(condition != G_IO_IN)
+    {
+        network_client_disconnect(client);
+        return FALSE;
+    }
     status = g_io_channel_read_chars(source, client->buf + client->buf_position, 
              sizeof(client->buf)-client->buf_position, &bytes_read, NULL);
     client->buf_position += (gint)bytes_read;
@@ -66,12 +72,18 @@ static gboolean client_in_event
     {
         if(g_strrstr(client->buf, "\n"))
         {
-            gint ret;
             client->buf_position = 0;
             if((ret = commands_process(client)) == COMMANDS_OK)
-                g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL);
+            {
+                if(g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL) != G_IO_STATUS_NORMAL)
+                    network_client_disconnect(client);
+                
+            }
             else if (ret == COMMANDS_FAIL)
-                g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL);
+            {
+                if(g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL) != G_IO_STATUS_NORMAL)
+                    network_client_disconnect(client);
+            }
 
         }
         else if(client->buf_position == sizeof(client->buf))
@@ -133,9 +145,9 @@ static gboolean listen_in_event
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);
         g_io_channel_set_buffered(client->channel, FALSE);
+        write(fd, GREETING, sizeof(GREETING)-1);
         client->source_id = g_io_add_watch(client->channel, G_IO_IN|G_IO_ERR|G_IO_HUP,
                             client_in_event, client);
-        write(fd, GREETING, sizeof(GREETING)-1);
     }
     return TRUE;
 }
@@ -187,7 +199,7 @@ struct NetworkServer *network_server_new(struct TagDatabase *database)
     return server;
 }
 
-void network_client_printf(struct client *client, char *format, ...)
+gboolean network_client_printf(struct client *client, char *format, ...)
 {
     va_list args, tmp;
     int length;
@@ -199,10 +211,18 @@ void network_client_printf(struct client *client, char *format, ...)
     va_end(tmp);
 
     if(length <= 0)
-        return;
+        return FALSE;
 
     buffer = g_malloc(length + 1);
     vsnprintf(buffer, length + 1, format, args);
-    g_io_channel_write_chars(client->channel, buffer, length, NULL, NULL);
+    if(g_io_channel_write_chars(client->channel, buffer, length, NULL, NULL) != G_IO_STATUS_NORMAL)
+    {
+        network_client_disconnect(client);
+        g_free(buffer);
+        va_end(args);
+        return FALSE;
+    }
+    g_free(buffer);
     va_end(args);
+    return TRUE;
 }
