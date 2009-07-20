@@ -20,5 +20,6 @@
 #define __COMMANDS_H__
 
 
+extern gboolean commands_process(struct client *client);
 #endif
 

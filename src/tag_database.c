@@ -29,6 +29,8 @@
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
 
+#define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
+
 #define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
 
 static int createDatabaseLayout(struct TagDatabase *database);
@@ -114,7 +116,7 @@ gint tag_database_tag_exists(struct TagDatabase *database, gchar *tagid)
 	int rc;
 	sqlite3_stmt *stmt;
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 2048, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
@@ -134,7 +136,7 @@ static sqlite_int64 tag_database_get_user_id(struct TagDatabase *database, gchar
 	sqlite_int64 user_id;
 	sqlite3_stmt *stmt;
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 2048, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
@@ -169,7 +171,7 @@ struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar
 		return NULL;
 	}
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 2048, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
@@ -199,7 +201,7 @@ gint tag_database_action_insert
 	int rc;
 	sqlite3_stmt *stmt;
 	
-	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, 2048, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error INSERT_ACTION_QUERY\n");
@@ -212,4 +214,33 @@ gint tag_database_action_insert
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return 1;
+}
+
+gchar *tag_database_tag_last_read
+(struct TagDatabase *database, time_t *timestamp)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	gchar *ret;
+	
+	rc = sqlite3_prepare_v2(database->db, SELECT_ACTION_LAST_READ, 1024, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ACTION_LAST_READ\n");
+		return 0;
+	}
+	sqlite3_bind_int64(stmt, 1, (sqlite3_int64)ACTION_TAG_READ);
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		*timestamp = sqlite3_column_int64(stmt,0);
+		ret = g_strdup((gchar*)sqlite3_column_text(stmt,1));
+		sqlite3_finalize(stmt);
+	}
+	else
+	{
+		sqlite3_finalize(stmt);
+		return NULL;
+	}
+	return ret;
 }

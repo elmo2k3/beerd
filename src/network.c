@@ -33,6 +33,7 @@
 
 #include "network.h"
 #include "configfile.h"
+#include "commands.h"
 
 static GList *clients;
 static guint num_clients;
@@ -48,12 +49,16 @@ static gboolean client_in_event
 (GIOChannel *source, GIOCondition condition, gpointer user_data)
 {
     struct client *client = user_data;
-    gchar *buf;
     gsize bytes_read;
-    gsize terminator_pos;
-
-    if(g_io_channel_read_line(source, &buf, &bytes_read, &terminator_pos, NULL) != G_IO_STATUS_NORMAL)
+    GIOStatus status;
+   
+    status = g_io_channel_read_chars(source, client->buf + client->buf_position, 
+             sizeof(client->buf)-client->buf_position, &bytes_read, NULL);
+    client->buf_position += (gint)bytes_read;
+    client->buf[client->buf_position] = '\0';
+    if(status != G_IO_STATUS_NORMAL)
     {
+        g_debug("client disconnect %d",status);
         clients = g_list_remove(clients, client);
         num_clients--;
         if(client->source_id)
@@ -68,10 +73,17 @@ static gboolean client_in_event
             g_free(client);
         }
     }
-    if(buf)
+    else
     {
-        g_debug("msg: %s",buf);
-        g_free(buf);
+        if(g_strrstr(client->buf, "\n"))
+        {
+            client->buf_position = 0;
+            if(commands_process(client))
+                g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL);
+            else
+                g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL);
+
+        }
     }
     return TRUE;
 }
@@ -105,8 +117,11 @@ static gboolean listen_in_event
         client->num = num_clients;
         num_clients++;
         client->database = server->database;
+        client->buf_position = 0;
         client->channel = g_io_channel_unix_new(fd);
         g_io_channel_set_close_on_unref(client->channel, TRUE);
+        g_io_channel_set_encoding(client->channel, NULL, NULL);
+        g_io_channel_set_buffered(client->channel, FALSE);
         client->source_id = g_io_add_watch(client->channel, G_IO_IN|G_IO_ERR|G_IO_HUP,
                             client_in_event, client);
         write(fd, GREETING, sizeof(GREETING)-1);

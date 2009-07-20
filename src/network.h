@@ -23,6 +23,10 @@
 #include "tag_database.h"
 
 #define GREETING "Welcome to the Beernary Daemon 0.001\r\n"
+#define CMD_SUCCESSFULL "OK\r\n"
+#define CMD_FAIL "FAIL\r\n"
+
+#define MAX_CMD_LENGTH 1024
 
 struct NetworkServer
 {
@@ -36,6 +40,8 @@ struct client
 	guint num;
 	GIOChannel *channel;
 	guint source_id;
+	gchar buf[MAX_CMD_LENGTH];
+	gint buf_position;
 	struct TagDatabase *database;
 };
 

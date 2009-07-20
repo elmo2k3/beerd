@@ -74,4 +74,7 @@ extern gint tag_database_tag_insert
 extern gint tag_database_action_insert
 (struct TagDatabase *database, time_t timestamp, gint action_id, gchar *value1, gchar *value2);
 
+extern gchar *tag_database_tag_last_read
+(struct TagDatabase *database, time_t *timestamp);
+
 #endif
