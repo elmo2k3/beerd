@@ -372,11 +372,12 @@ extern gint tag_database_user_get_permission
 	return permission;
 }
 
-gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **user)
+gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **users)
 {
 	int rc;
 	sqlite3_stmt *stmt;
 	gint num = 0;
+	struct TagUser *user;
 
 	rc = sqlite3_prepare_v2(database->db, SELECT_USER_NUM, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
@@ -390,7 +391,8 @@ gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **us
 		num = (gint)sqlite3_column_int64(stmt,0);
 		if(num)
 		{
-			*user = (struct TagUser*)g_new0(struct TagUser*, num);
+			g_debug("allocating %d structs",num);
+			user = g_new0(struct TagUser, num);
 		}
 	}
 	sqlite3_finalize(stmt);
@@ -407,21 +409,21 @@ gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **us
 	num = 0;
 	while(rc == SQLITE_ROW)
 	{
-		user[num] = g_new0(struct TagUser, 1);
-		user[num]->id = (gint)sqlite3_column_int64(stmt,0);
-		g_strlcpy(user[num]->name, (gchar*)sqlite3_column_text(stmt,1), sizeof(user[num]->name));
-		g_strlcpy(user[num]->surname, (gchar*)sqlite3_column_text(stmt,2), sizeof(user[num]->surname));
-		g_strlcpy(user[num]->nick, (gchar*)sqlite3_column_text(stmt,3), sizeof(user[num]->nick));
-		g_strlcpy(user[num]->email, (gchar*)sqlite3_column_text(stmt,4), sizeof(user[num]->email));
-		user[num]->age = (gint)sqlite3_column_int64(stmt,5);
-		user[num]->weight = (gint)sqlite3_column_int64(stmt,6); 
-		user[num]->size = (gint)sqlite3_column_int64(stmt,7); 
-		user[num]->gender = (gint)sqlite3_column_int64(stmt,8); 
-		user[num]->permission = (gint)sqlite3_column_int64(stmt,9);
+		user[num].id = (gint)sqlite3_column_int64(stmt,0);
+		g_strlcpy(user[num].name, (gchar*)sqlite3_column_text(stmt,1), sizeof(user[num].name));
+		g_strlcpy(user[num].surname, (gchar*)sqlite3_column_text(stmt,2), sizeof(user[num].surname));
+		g_strlcpy(user[num].nick, (gchar*)sqlite3_column_text(stmt,3), sizeof(user[num].nick));
+		g_strlcpy(user[num].email, (gchar*)sqlite3_column_text(stmt,4), sizeof(user[num].email));
+		user[num].age = (gint)sqlite3_column_int64(stmt,5);
+		user[num].weight = (gint)sqlite3_column_int64(stmt,6); 
+		user[num].size = (gint)sqlite3_column_int64(stmt,7); 
+		user[num].gender = (gint)sqlite3_column_int64(stmt,8); 
+		user[num].permission = (gint)sqlite3_column_int64(stmt,9);
 		rc = sqlite3_step(stmt);
 		num++;
 	}
 	sqlite3_finalize(stmt);
+	*users = user;
 	return num;
 }
 

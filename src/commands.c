@@ -57,6 +57,20 @@ static struct command commands[] = {
 	{"get_all_users",0,0,	NETWORK_CLIENT_PERMISSION_READ, action_get_all_users}
 	};
 
+static void print_user(struct client *client, struct TagUser *user)
+{
+	network_client_printf(client, "id: %d\r\n", user->id);
+	network_client_printf(client, "name: %s\r\n", user->name);
+	network_client_printf(client, "surname: %s\r\n", user->surname);
+	network_client_printf(client, "nick: %s\r\n", user->nick);
+	network_client_printf(client, "email: %s\r\n", user->email);
+	network_client_printf(client, "age: %d\r\n", user->age);
+	network_client_printf(client, "weight: %d\r\n", user->weight);
+	network_client_printf(client, "size: %d\r\n", user->size);
+	network_client_printf(client, "gender: %d\r\n", user->gender);
+	network_client_printf(client, "permission: %d\r\n", user->permission);
+}
+
 static enum commands_status action_get_all_users(struct client *client, int argc, char **argv)
 {
 	struct TagUser *users;
@@ -66,8 +80,9 @@ static enum commands_status action_get_all_users(struct client *client, int argc
 	num = tag_database_user_get_all(client->database, &users);
 	for(i=0;i<num;i++)
 	{
-		network_client_printf(client, "name: %s\r\n", users[i].name);
+		print_user(client,&users[i]);
 	}
+	g_free(users);
 	return COMMANDS_OK;
 }
 
@@ -77,15 +92,16 @@ static enum commands_status action_get_user_by_tag(struct client *client, int ar
 
 	if(!tag_database_user_get_by_tag(client->database, (gchar*)argv[1], &user))
 		return COMMANDS_FAIL;
-	network_client_printf(client, "name: %s\r\n", user.name);
-	network_client_printf(client, "surname: %s\r\n", user.surname);
-	network_client_printf(client, "nick: %s\r\n", user.nick);
-	network_client_printf(client, "email: %s\r\n", user.email);
-	network_client_printf(client, "age: %d\r\n", user.age);
-	network_client_printf(client, "weight: %d\r\n", user.weight);
-	network_client_printf(client, "size: %d\r\n", user.size);
-	network_client_printf(client, "gender: %d\r\n", user.gender);
-	network_client_printf(client, "permission: %d\r\n", user.permission);
+	print_user(client, &user);
+	return COMMANDS_OK;
+}
+static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv)
+{
+	struct TagUser user;
+
+	if(!tag_database_user_get_by_id(client->database, (gint)atoi(argv[1]), &user))
+		return COMMANDS_FAIL;
+	print_user(client,&user);
 	return COMMANDS_OK;
 }
 
@@ -105,23 +121,6 @@ static enum commands_status action_auth(struct client *client, int argc, char **
 	return COMMANDS_OK;
 }
 
-static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv)
-{
-	struct TagUser user;
-
-	if(!tag_database_user_get_by_id(client->database, (gint)atoi(argv[1]), &user))
-		return COMMANDS_FAIL;
-	network_client_printf(client, "name: %s\r\n", user.name);
-	network_client_printf(client, "surname: %s\r\n", user.surname);
-	network_client_printf(client, "nick: %s\r\n", user.nick);
-	network_client_printf(client, "email: %s\r\n", user.email);
-	network_client_printf(client, "age: %d\r\n", user.age);
-	network_client_printf(client, "weight: %d\r\n", user.weight);
-	network_client_printf(client, "size: %d\r\n", user.size);
-	network_client_printf(client, "gender: %d\r\n", user.gender);
-	network_client_printf(client, "permission: %d\r\n", user.permission);
-	return COMMANDS_OK;
-}
 
 static enum commands_status action_insert_user(struct client *client, int argc, char **argv)
 {
