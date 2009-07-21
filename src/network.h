@@ -22,7 +22,7 @@
 #include <glib.h>
 #include "tag_database.h"
 
-#define GREETING "Welcome to the Beernary Daemon 0.001\r\nType commands to get a list of commands\r\n\r\n"
+#define GREETING "Welcome to the Beernary Daemon 0.01\r\nType commands to get a list of commands\r\n\r\n"
 #define CMD_SUCCESSFULL "OK\r\n"
 #define CMD_FAIL "FAIL (drink more beer)\r\n"
 
@@ -37,6 +37,7 @@ struct NetworkServer
 
 struct client
 {
+	int fd;
 	guint num;
 	GIOChannel *channel;
 	guint source_id;

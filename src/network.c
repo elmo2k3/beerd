@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
+#include <poll.h>
 
 #include <glib.h>
 #include <glib/gprintf.h>
@@ -50,44 +51,45 @@ static gboolean client_in_event
 (GIOChannel *source, GIOCondition condition, gpointer user_data)
 {
     struct client *client = user_data;
-    gsize bytes_read;
     GIOStatus status;
     gint ret;
+    gchar *line;
+    gsize terminator_pos;
+    gsize bytes_read;
   
     if(condition != G_IO_IN)
     {
         network_client_disconnect(client);
         return FALSE;
     }
-    status = g_io_channel_read_chars(source, client->buf + client->buf_position, 
-             sizeof(client->buf)-client->buf_position, &bytes_read, NULL);
-    client->buf_position += (gint)bytes_read;
-    client->buf[client->buf_position] = '\0';
+    status = g_io_channel_read_line(source, &line, &bytes_read, &terminator_pos, NULL);
     if(status != G_IO_STATUS_NORMAL)
     {
-        g_debug("client disconnect %d",status);
         network_client_disconnect(client);
     }
     else
     {
-        if(g_strrstr(client->buf, "\n"))
+        g_strlcpy(client->buf, line, sizeof(client->buf));
+        g_free(line);
+        if((ret = commands_process(client)) == COMMANDS_OK)
         {
-            client->buf_position = 0;
-            if((ret = commands_process(client)) == COMMANDS_OK)
-            {
-                if(g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL) != G_IO_STATUS_NORMAL)
-                    network_client_disconnect(client);
-                
-            }
-            else if (ret == COMMANDS_FAIL)
-            {
-                if(g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL) != G_IO_STATUS_NORMAL)
-                    network_client_disconnect(client);
-            }
-
+            if(g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL) != G_IO_STATUS_NORMAL)
+                network_client_disconnect(client);
+            
         }
-        else if(client->buf_position == sizeof(client->buf))
-            client->buf_position = 0;
+        else if (ret == COMMANDS_FAIL)
+        {
+            if(g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL) != G_IO_STATUS_NORMAL)
+                network_client_disconnect(client);
+        }
+        struct pollfd pollfd = { client->fd, POLLHUP, POLLHUP };
+        if(!poll(&pollfd, 1, 1))
+            g_io_channel_flush(client->channel, NULL);
+        else
+        {
+            g_io_channel_shutdown(client->channel, FALSE, NULL);
+            g_debug("poll error");
+        }
     }
     return TRUE;
 }
@@ -141,10 +143,11 @@ static gboolean listen_in_event
         num_clients++;
         client->database = server->database;
         client->buf_position = 0;
+        client->fd = fd;
         client->channel = g_io_channel_unix_new(fd);
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);
-        g_io_channel_set_buffered(client->channel, FALSE);
+//        g_io_channel_set_buffered(client->channel, FALSE);
         write(fd, GREETING, sizeof(GREETING)-1);
         client->source_id = g_io_add_watch(client->channel, G_IO_IN|G_IO_ERR|G_IO_HUP,
                             client_in_event, client);
