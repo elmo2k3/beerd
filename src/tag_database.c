@@ -17,6 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 #include "misc.h"
@@ -188,11 +189,11 @@ struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar
 		g_strlcpy(user->surname, (gchar*)sqlite3_column_text(stmt,1), sizeof(user->surname));
 		g_strlcpy(user->nick, (gchar*)sqlite3_column_text(stmt,2), sizeof(user->nick));
 		g_strlcpy(user->email, (gchar*)sqlite3_column_text(stmt,3), sizeof(user->email));
-		user->age = atoi(sqlite3_column_text(stmt,4));
-		user->weight = atoi(sqlite3_column_text(stmt,5));
-		user->size = atoi(sqlite3_column_text(stmt,6));
-		user->gender = atoi(sqlite3_column_text(stmt,7));
-		user->permission = (gint)sqlite3_column_int64(stmt,4);
+		user->age = (gint)sqlite3_column_int64(stmt,4);
+		user->weight = (gint)sqlite3_column_int64(stmt,5); 
+		user->size = (gint)sqlite3_column_int64(stmt,6); 
+		user->gender = (gint)sqlite3_column_int64(stmt,7); 
+		user->permission = (gint)sqlite3_column_int64(stmt,8);
 		sqlite3_finalize(stmt);
 		return user;
 	}
@@ -225,10 +226,10 @@ struct TagUser *tag_database_user_get_by_id(struct TagDatabase *database, gint u
 		g_strlcpy(user->surname, (gchar*)sqlite3_column_text(stmt,1), sizeof(user->surname));
 		g_strlcpy(user->nick, (gchar*)sqlite3_column_text(stmt,2), sizeof(user->nick));
 		g_strlcpy(user->email, (gchar*)sqlite3_column_text(stmt,3), sizeof(user->email));
-		user->age = atoi(sqlite3_column_text(stmt,4));
-		user->weight = atoi(sqlite3_column_text(stmt,5));
-		user->size = atoi(sqlite3_column_text(stmt,6));
-		user->gender = atoi(sqlite3_column_text(stmt,7));
+		user->age = (gint)sqlite3_column_int64(stmt,4);
+		user->weight = (gint)sqlite3_column_int64(stmt,5); 
+		user->size = (gint)sqlite3_column_int64(stmt,6); 
+		user->gender = (gint)sqlite3_column_int64(stmt,7); 
 		user->permission = (gint)sqlite3_column_int64(stmt,8);
 		sqlite3_finalize(stmt);
 		return user;
