@@ -23,9 +23,10 @@ enum commands_status
 {
     COMMANDS_OK,
     COMMANDS_FAIL,
-    COMMANDS_DISCONNECT
+    COMMANDS_DISCONNECT,
+    COMMANDS_DENIED
 };
 
-extern enum commands_status commands_process(struct client *client);
+extern enum commands_status commands_process(struct client *client, char *cmdline);
 #endif
 

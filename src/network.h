@@ -25,8 +25,14 @@
 #define GREETING "Welcome to the Beernary Daemon 0.01\r\nType commands to get a list of commands\r\n\r\n"
 #define CMD_SUCCESSFULL "OK\r\n"
 #define CMD_FAIL "FAIL (drink more beer)\r\n"
+#define CMD_DENIED "DENIED (drank too much beer?)\r\n"
 
-#define MAX_CMD_LENGTH 1024
+enum NetworkClientPermission
+{
+	NETWORK_CLIENT_PERMISSION_NONE,
+	NETWORK_CLIENT_PERMISSION_READ,
+	NETWORK_CLIENT_PERMISSION_ADMIN
+};
 
 struct NetworkServer
 {
@@ -41,9 +47,8 @@ struct client
 	guint num;
 	GIOChannel *channel;
 	guint source_id;
-	gchar buf[MAX_CMD_LENGTH];
-	gint buf_position;
 	struct TagDatabase *database;
+	gint permission;
 };
 
 extern struct NetworkServer *network_server_new(struct TagDatabase *database);

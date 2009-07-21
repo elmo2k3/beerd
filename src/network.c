@@ -69,9 +69,7 @@ static gboolean client_in_event
     }
     else
     {
-        g_strlcpy(client->buf, line, sizeof(client->buf));
-        g_free(line);
-        if((ret = commands_process(client)) == COMMANDS_OK)
+        if((ret = commands_process(client,line)) == COMMANDS_OK)
         {
             if(g_io_channel_write_chars(client->channel, CMD_SUCCESSFULL, sizeof(CMD_SUCCESSFULL), NULL, NULL) != G_IO_STATUS_NORMAL)
                 network_client_disconnect(client);
@@ -82,6 +80,16 @@ static gboolean client_in_event
             if(g_io_channel_write_chars(client->channel, CMD_FAIL, sizeof(CMD_FAIL), NULL, NULL) != G_IO_STATUS_NORMAL)
                 network_client_disconnect(client);
         }
+        else if (ret == COMMANDS_DENIED)
+        {
+            if(g_io_channel_write_chars(client->channel, CMD_DENIED, sizeof(CMD_DENIED), NULL, NULL) != G_IO_STATUS_NORMAL)
+                network_client_disconnect(client);
+        }
+        else if (ret == COMMANDS_DISCONNECT)
+        {
+            g_free(line);
+            return TRUE;
+        }
         struct pollfd pollfd = { client->fd, POLLHUP, POLLHUP };
         if(!poll(&pollfd, 1, 1))
             g_io_channel_flush(client->channel, NULL);
@@ -91,6 +99,7 @@ static gboolean client_in_event
             g_debug("poll error");
         }
     }
+    g_free(line);
     return TRUE;
 }
 
@@ -142,8 +151,8 @@ static gboolean listen_in_event
         client->num = num_clients;
         num_clients++;
         client->database = server->database;
-        client->buf_position = 0;
         client->fd = fd;
+        client->permission = 0;
         client->channel = g_io_channel_unix_new(fd);
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);

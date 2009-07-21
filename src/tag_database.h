@@ -46,6 +46,7 @@ struct TagUser
     gchar surname[128];
     gchar nick[128];
     gchar email[128];
+    gchar password[128];
     gint age;
     gint weight;
     gint size;
@@ -86,5 +87,8 @@ extern gint tag_database_tag_insert
 
 extern gint tag_database_user_get_by_id
 (struct TagDatabase *database, gint user_id, struct TagUser *user);
+
+extern gint tag_database_user_get_permission
+(struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime);
 
 #endif

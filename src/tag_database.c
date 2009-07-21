@@ -18,23 +18,25 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 #include "misc.h"
 #include "tag_database.h"
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
-#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER)"
+#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 INTEGER, action_value2 INTEGER)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
+#define SELECT_USER_BY_NICK "SELECT password, permission FROM users WHERE nick=?"
 #define SELECT_ALL_USER_QUERY "SELECT * FROM users"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
 #define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
-#define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission) VALUES (?,?,?,?,?,?,?,?,?)"
+#define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission,password) VALUES (?,?,?,?,?,?,?,?,?,?)"
 #define INSERT_TAG_QUERY "INSERT INTO tags (tag,user_id,permission) VALUES (?,?,?)"
 
 static int createDatabaseLayout(struct TagDatabase *database);
@@ -302,6 +304,7 @@ gint tag_database_user_insert
 	sqlite3_bind_int64(stmt, 7, (sqlite3_int64)user->size);
 	sqlite3_bind_int64(stmt, 8, (sqlite3_int64)user->gender);
 	sqlite3_bind_int64(stmt, 9, (sqlite3_int64)user->permission);
+	sqlite3_bind_text(stmt, 10, user->password, -1, NULL);
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return 1;
@@ -325,5 +328,46 @@ gint tag_database_tag_insert
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return 1;
+}
+
+extern gint tag_database_user_get_permission
+(struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	gint permission;
+	gchar buffer[512];
+	
+	/* some checks for plausability */
+	if(!rawtime || rawtime < 1248201327 || rawtime > 1910889327)
+		return 0;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, 1024, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_USER_BY_NICK\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, nick, -1, NULL);
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA256);
+		
+		g_sprintf(buffer,"%s%ld",sqlite3_column_text(stmt,0), rawtime);
+		g_checksum_update(checksum, (guchar*)buffer, strlen(buffer));
+		if(g_strcmp0(g_checksum_get_string(checksum), password))
+		{
+			permission = 0;
+		}
+		else
+			permission = (gint)sqlite3_column_int64(stmt,1);
+
+		g_checksum_free(checksum);
+	}
+	else
+		permission = 0;
+	sqlite3_finalize(stmt);
+	return permission;
 }
 

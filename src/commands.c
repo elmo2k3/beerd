@@ -30,6 +30,7 @@ struct command
 	gchar *cmd;
 	gint min_params;
 	gint max_params;
+	enum NetworkClientPermission permission; 
 	enum commands_status (*action)(struct client *client, int argc, char **argv);
 };
 
@@ -40,16 +41,18 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
 static enum commands_status action_insert_tag(struct client *client, int argc, char **argv);
 static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv);
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv);
+static enum commands_status action_auth(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 7
+#define NUM_COMMANDS 8
 static struct command commands[] = {
-	{"commands", 0, 0, action_commands},
-	{"last_tagid", 0, 0, action_last_tagid},
-	{"quit", 0, 0, action_disconnect},
-	{"insert_user", 9, 9, action_insert_user},
-	{"insert_tag",3,3, action_insert_tag},
-	{"get_user_by_id",1,1, action_get_user_by_id},
-	{"get_user_by_tag",1,1, action_get_user_by_tag}
+	{"commands", 0, 0,		NETWORK_CLIENT_PERMISSION_NONE, action_commands},
+	{"last_tagid", 0, 0,	NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
+	{"quit", 0, 0,			NETWORK_CLIENT_PERMISSION_NONE, action_disconnect},
+	{"insert_user", 10, 10,	NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_user},
+	{"insert_tag",3,3,		NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_tag},
+	{"get_user_by_id",1,1, 	NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_id},
+	{"get_user_by_tag",1,1, NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_tag},
+	{"auth",3,3,			NETWORK_CLIENT_PERMISSION_NONE, action_auth}
 	};
 
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv)
@@ -67,6 +70,22 @@ static enum commands_status action_get_user_by_tag(struct client *client, int ar
 	network_client_printf(client, "size: %d\r\n", user.size);
 	network_client_printf(client, "gender: %d\r\n", user.gender);
 	network_client_printf(client, "permission: %d\r\n", user.permission);
+	return COMMANDS_OK;
+}
+
+static enum commands_status action_auth(struct client *client, int argc, char **argv)
+{
+	client->permission = tag_database_user_get_permission
+		(client->database, argv[1], argv[2], (time_t)atoi(argv[3]));
+	switch(client->permission)
+	{
+		case NETWORK_CLIENT_PERMISSION_NONE: 
+					network_client_printf(client,"permission: NONE\r\n"); break;
+		case NETWORK_CLIENT_PERMISSION_READ: 
+					network_client_printf(client,"permission: READ\r\n"); break;
+		case NETWORK_CLIENT_PERMISSION_ADMIN: 
+					network_client_printf(client,"permission: ADMIN\r\n"); break;
+	}
 	return COMMANDS_OK;
 }
 
@@ -91,6 +110,10 @@ static enum commands_status action_get_user_by_id(struct client *client, int arg
 static enum commands_status action_insert_user(struct client *client, int argc, char **argv)
 {
 	struct TagUser user;
+	GChecksum *checksum;
+
+	checksum = g_checksum_new(G_CHECKSUM_SHA256);
+	g_checksum_update(checksum, (guchar*)argv[10], strlen(argv[10]));
 	g_strlcpy(user.name, argv[1], sizeof(user.name));
 	g_strlcpy(user.surname, argv[2], sizeof(user.surname));
 	g_strlcpy(user.nick, argv[3], sizeof(user.nick));
@@ -100,7 +123,9 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
 	user.size = atoi(argv[7]);
 	user.gender = atoi(argv[8]);
 	user.permission = atoi(argv[9]);
+	g_strlcpy(user.password, g_checksum_get_string(checksum), sizeof(user.password));
 	tag_database_user_insert(client->database, &user);
+	g_checksum_free(checksum);
 	return COMMANDS_OK;
 }
 
@@ -142,13 +167,10 @@ static enum commands_status action_last_tagid(struct client *client, int argc, c
 		return COMMANDS_DISCONNECT;
 	if(!network_client_printf(client, "last_tagid: %s\r\n",last_tag))
 		return COMMANDS_DISCONNECT;
-/*	g_io_channel_write_chars(client->channel, "last_tagid: ", 12, &bytes_written, NULL);
-	g_io_channel_write_chars(client->channel, last_tag, strlen(last_tag), &bytes_written, NULL);
-	g_io_channel_write_chars(client->channel, "\r\n", 2, &bytes_written, NULL);*/
 	return COMMANDS_OK;
 }
 
-enum commands_status commands_process(struct client *client)
+enum commands_status commands_process(struct client *client, gchar *cmdline)
 {
 	int i;
 	gchar *pos;
@@ -156,17 +178,21 @@ enum commands_status commands_process(struct client *client)
 	char *argv[1024] = { NULL };
 	int argc;
 	
-	g_debug("processing command from client %d: %s", client->num, client->buf);
+	g_debug("processing command from client %d: %s", client->num, cmdline);
+	
 	ret = COMMANDS_FAIL;
 	for(i = 0;i < NUM_COMMANDS; i++)
 	{
-		pos = g_strstr_len(client->buf, -1, commands[i].cmd);
-		if(pos == client->buf) // command must be at the beginning of the line
+		pos = g_strstr_len(cmdline, -1, commands[i].cmd);
+		if(pos == cmdline) // command must be at the beginning of the line
 		{
-			argc = buffer2array(client->buf, argv, 1024) -1 ;
+			argc = buffer2array(cmdline, argv, 1024) -1 ;
 			if(argc < commands[i].min_params || argc > commands[i].max_params)
 				return COMMANDS_FAIL;
-			ret = commands[i].action(client, argc, argv);
+			if(client->permission >= commands[i].permission)
+				ret = commands[i].action(client, argc, argv);
+			else
+				ret = COMMANDS_DENIED;
 		}
 	}
 	return ret;
