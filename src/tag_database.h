@@ -54,6 +54,23 @@ struct TagUser
     gint permission;
 };
 
+struct Tag
+{
+    gint rowid;
+    gchar tagid[11];
+    gint userid;
+    gint permission;
+};
+
+struct TagAction
+{
+    gint rowid;
+    time_t timestamp;
+    gint action_id;
+    gchar action_value1[128];
+    gchar action_value2[128];
+};
+
 extern struct TagDatabase *tag_database_new
 (char *filename);
 
@@ -92,5 +109,7 @@ extern gint tag_database_user_get_permission
 (struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime);
 
 extern gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **users);
+extern gint tag_database_tags_get_all(struct TagDatabase *database, struct Tag **tags);
+extern gint tag_database_actions_get_all(struct TagDatabase *database, struct TagAction **actions);
 
 #endif

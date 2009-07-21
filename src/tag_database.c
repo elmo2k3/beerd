@@ -26,13 +26,17 @@
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
 #define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB)"
-#define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 INTEGER, action_value2 INTEGER)"
+#define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
 #define SELECT_USER_BY_NICK "SELECT password, permission FROM users WHERE nick=?"
 #define SELECT_ALL_USER_QUERY "SELECT rowid,* FROM users"
+#define SELECT_ALL_TAGS_QUERY "SELECT rowid,* FROM tags"
+#define SELECT_ALL_ACTIONS_QUERY "SELECT rowid,* FROM actions"
 #define SELECT_USER_NUM "SELECT count(*) FROM users"
+#define SELECT_TAG_NUM "SELECT count(*) FROM tags"
+#define SELECT_ACTION_NUM "SELECT count(*) FROM actions"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
@@ -427,3 +431,105 @@ gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **us
 	return num;
 }
 
+gint tag_database_tags_get_all(struct TagDatabase *database, struct Tag **tags)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	gint num = 0;
+	struct Tag *tag;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_NUM, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_TAG_NUM\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		num = (gint)sqlite3_column_int64(stmt,0);
+		if(num)
+		{
+			g_debug("allocating %d structs",num);
+			tag = g_new0(struct Tag, num);
+		}
+	}
+	sqlite3_finalize(stmt);
+	if(!num)
+		return 0;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_ALL_TAGS_QUERY, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ALL_TAGS_QUERY\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	num = 0;
+	while(rc == SQLITE_ROW)
+	{
+		tag[num].rowid = (gint)sqlite3_column_int64(stmt,0);
+		g_strlcpy(tag[num].tagid, (gchar*)sqlite3_column_text(stmt,1), sizeof(tag[num].tagid));
+		tag[num].userid = (gint)sqlite3_column_int64(stmt,2);
+		tag[num].permission = (gint)sqlite3_column_int64(stmt,3);
+		rc = sqlite3_step(stmt);
+		num++;
+	}
+	sqlite3_finalize(stmt);
+	*tags = tag;
+	return num;
+}
+
+extern gint tag_database_actions_get_all(struct TagDatabase *database, struct TagAction **actions)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	gint num = 0;
+	struct TagAction *action;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_ACTION_NUM, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ACTION_NUM\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		num = (gint)sqlite3_column_int64(stmt,0);
+		if(num)
+		{
+			g_debug("allocating %d structs",num);
+			action = g_new0(struct TagAction, num);
+		}
+	}
+	sqlite3_finalize(stmt);
+	if(!num)
+		return 0;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_ALL_ACTIONS_QUERY, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ALL_ACTION_QUERY\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	num = 0;
+	while(rc == SQLITE_ROW)
+	{
+		action[num].rowid = (gint)sqlite3_column_int64(stmt,0);
+		action[num].timestamp = (time_t)sqlite3_column_int64(stmt,1);
+		action[num].action_id = (gint)sqlite3_column_int64(stmt,2);
+		g_strlcpy(action[num].action_value1, 
+			(gchar*)sqlite3_column_text(stmt,3), sizeof(action[num].action_value1));
+		g_strlcpy(action[num].action_value2, 
+			(gchar*)sqlite3_column_text(stmt,4), sizeof(action[num].action_value2));
+		rc = sqlite3_step(stmt);
+		num++;
+	}
+	sqlite3_finalize(stmt);
+	*actions = action;
+	return num;
+}
+
+extern gint tag_database_actions_get_all(struct TagDatabase *database, struct TagAction **actions);
