@@ -29,6 +29,7 @@
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
+#define SELECT_ALL_USER_QUERY "SELECT * FROM users"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
@@ -157,28 +158,24 @@ static sqlite_int64 tag_database_get_user_id(struct TagDatabase *database, gchar
 	return 0;
 }
 
-struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar *tagid)
+gint tag_database_user_get_by_tag
+(struct TagDatabase *database, gchar *tagid, struct TagUser *user)
 {
 	int rc;
 	sqlite3_stmt *stmt;
 	sqlite3_int64 user_id;
 
-	struct TagUser *user = g_new0(struct TagUser, 1);
-	if(!user)
-		return NULL;
-
 	user_id = tag_database_get_user_id(database, tagid);
 	if(!user_id)
 	{
-		g_free(user);
-		return NULL;
+		return FALSE;
 	}
 
 	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
-		return 0;
+		return FALSE;
 	}
 	sqlite3_bind_int64(stmt, 1, user_id);
 	rc = sqlite3_step(stmt);
@@ -195,27 +192,23 @@ struct TagUser *tag_database_user_get_by_tag(struct TagDatabase *database, gchar
 		user->gender = (gint)sqlite3_column_int64(stmt,7); 
 		user->permission = (gint)sqlite3_column_int64(stmt,8);
 		sqlite3_finalize(stmt);
-		return user;
+		return TRUE;
 	}
 	sqlite3_finalize(stmt);
-	g_free(user);
-	return NULL;
+	return FALSE;
 }
 
-struct TagUser *tag_database_user_get_by_id(struct TagDatabase *database, gint user_id)
+gint tag_database_user_get_by_id
+(struct TagDatabase *database, gint user_id, struct TagUser *user)
 {
 	int rc;
 	sqlite3_stmt *stmt;
-
-	struct TagUser *user = g_new0(struct TagUser, 1);
-	if(!user)
-		return NULL;
 
 	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
-		return 0;
+		return FALSE;
 	}
 	sqlite3_bind_int64(stmt, 1, (sqlite_int64)user_id);
 	rc = sqlite3_step(stmt);
@@ -232,11 +225,10 @@ struct TagUser *tag_database_user_get_by_id(struct TagDatabase *database, gint u
 		user->gender = (gint)sqlite3_column_int64(stmt,7); 
 		user->permission = (gint)sqlite3_column_int64(stmt,8);
 		sqlite3_finalize(stmt);
-		return user;
+		return TRUE;
 	}
 	sqlite3_finalize(stmt);
-	g_free(user);
-	return NULL;
+	return FALSE;
 }
 
 gint tag_database_action_insert

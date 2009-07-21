@@ -66,8 +66,8 @@ extern void tag_database_set_callback_auth_failed
 extern gint tag_database_tag_exists
 (struct TagDatabase *database, gchar *tagid);
 
-extern struct TagUser *tag_database_user_get_by_tag
-(struct TagDatabase *database, gchar *tagid);
+extern gint tag_database_user_get_by_tag
+(struct TagDatabase *database, gchar *tagid, struct TagUser *user);
 
 extern gint tag_database_user_insert
 (struct TagDatabase *database, struct TagUser *user);
@@ -84,7 +84,7 @@ extern gchar *tag_database_tag_last_read
 extern gint tag_database_tag_insert
 (struct TagDatabase *database, gchar *tagid, gint userid, gint permission);
 
-extern struct TagUser *tag_database_user_get_by_id
-(struct TagDatabase *database, gint user_id);
+extern gint tag_database_user_get_by_id
+(struct TagDatabase *database, gint user_id, struct TagUser *user);
 
 #endif

@@ -54,41 +54,37 @@ static struct command commands[] = {
 
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv)
 {
-	struct TagUser *user;
+	struct TagUser user;
 
-	user = tag_database_user_get_by_tag(client->database, (gchar*)argv[1]);
-	if(!user)
+	if(!tag_database_user_get_by_tag(client->database, (gchar*)argv[1], &user))
 		return COMMANDS_FAIL;
-	network_client_printf(client, "name: %s\r\n", user->name);
-	network_client_printf(client, "surname: %s\r\n", user->surname);
-	network_client_printf(client, "nick: %s\r\n", user->nick);
-	network_client_printf(client, "email: %s\r\n", user->email);
-	network_client_printf(client, "age: %d\r\n", user->age);
-	network_client_printf(client, "weight: %d\r\n", user->weight);
-	network_client_printf(client, "size: %d\r\n", user->size);
-	network_client_printf(client, "gender: %d\r\n", user->gender);
-	network_client_printf(client, "permission: %d\r\n", user->permission);
-	g_free(user);
+	network_client_printf(client, "name: %s\r\n", user.name);
+	network_client_printf(client, "surname: %s\r\n", user.surname);
+	network_client_printf(client, "nick: %s\r\n", user.nick);
+	network_client_printf(client, "email: %s\r\n", user.email);
+	network_client_printf(client, "age: %d\r\n", user.age);
+	network_client_printf(client, "weight: %d\r\n", user.weight);
+	network_client_printf(client, "size: %d\r\n", user.size);
+	network_client_printf(client, "gender: %d\r\n", user.gender);
+	network_client_printf(client, "permission: %d\r\n", user.permission);
 	return COMMANDS_OK;
 }
 
 static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv)
 {
-	struct TagUser *user;
+	struct TagUser user;
 
-	user = tag_database_user_get_by_id(client->database, (gint)atoi(argv[1]));
-	if(!user)
+	if(!tag_database_user_get_by_id(client->database, (gint)atoi(argv[1]), &user))
 		return COMMANDS_FAIL;
-	network_client_printf(client, "name: %s\r\n", user->name);
-	network_client_printf(client, "surname: %s\r\n", user->surname);
-	network_client_printf(client, "nick: %s\r\n", user->nick);
-	network_client_printf(client, "email: %s\r\n", user->email);
-	network_client_printf(client, "age: %d\r\n", user->age);
-	network_client_printf(client, "weight: %d\r\n", user->weight);
-	network_client_printf(client, "size: %d\r\n", user->size);
-	network_client_printf(client, "gender: %d\r\n", user->gender);
-	network_client_printf(client, "permission: %d\r\n", user->permission);
-	g_free(user);
+	network_client_printf(client, "name: %s\r\n", user.name);
+	network_client_printf(client, "surname: %s\r\n", user.surname);
+	network_client_printf(client, "nick: %s\r\n", user.nick);
+	network_client_printf(client, "email: %s\r\n", user.email);
+	network_client_printf(client, "age: %d\r\n", user.age);
+	network_client_printf(client, "weight: %d\r\n", user.weight);
+	network_client_printf(client, "size: %d\r\n", user.size);
+	network_client_printf(client, "gender: %d\r\n", user.gender);
+	network_client_printf(client, "permission: %d\r\n", user.permission);
 	return COMMANDS_OK;
 }
 
@@ -142,7 +138,6 @@ static enum commands_status action_last_tagid(struct client *client, int argc, c
 	localtime_r(&timestamp, &ptm);
 	strftime(date, sizeof(date), "%c", &ptm);
 	
-	g_debug("argv[0] = %s argv[1] = %s",argv[0],argv[1]);
 	if(!network_client_printf(client, "time_last_tagid: %s\r\n",date))
 		return COMMANDS_DISCONNECT;
 	if(!network_client_printf(client, "last_tagid: %s\r\n",last_tag))

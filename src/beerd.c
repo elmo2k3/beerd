@@ -26,7 +26,7 @@
 
 void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
-	struct TagUser *user;
+	struct TagUser user;
 	gint auth_successfull;
 	time_t rawtime;
 	struct TagDatabase *database = (struct TagDatabase*)user_data;
@@ -38,10 +38,9 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 	if(auth_successfull)
 	{
 		printf("auth successfull   ");
-		if((user = tag_database_user_get_by_tag(database, tag_reader->tagid)))
+		if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
 		{
-			printf("nick = %s", user->nick);
-			g_free(user);
+			printf("nick = %s", user.nick);
 		}
 		printf("\n");
 	}
