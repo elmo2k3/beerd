@@ -91,4 +91,6 @@ extern gint tag_database_user_get_by_id
 extern gint tag_database_user_get_permission
 (struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime);
 
+extern gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **user);
+
 #endif

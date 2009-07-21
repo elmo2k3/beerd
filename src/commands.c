@@ -42,8 +42,9 @@ static enum commands_status action_insert_tag(struct client *client, int argc, c
 static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv);
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv);
 static enum commands_status action_auth(struct client *client, int argc, char **argv);
+static enum commands_status action_get_all_users(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 8
+#define NUM_COMMANDS 9
 static struct command commands[] = {
 	{"commands", 0, 0,		NETWORK_CLIENT_PERMISSION_NONE, action_commands},
 	{"last_tagid", 0, 0,	NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
@@ -52,8 +53,23 @@ static struct command commands[] = {
 	{"insert_tag",3,3,		NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_tag},
 	{"get_user_by_id",1,1, 	NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_id},
 	{"get_user_by_tag",1,1, NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_tag},
-	{"auth",3,3,			NETWORK_CLIENT_PERMISSION_NONE, action_auth}
+	{"auth",3,3,			NETWORK_CLIENT_PERMISSION_NONE, action_auth},
+	{"get_all_users",0,0,	NETWORK_CLIENT_PERMISSION_READ, action_get_all_users}
 	};
+
+static enum commands_status action_get_all_users(struct client *client, int argc, char **argv)
+{
+	struct TagUser *users;
+	gint num;
+	int i;
+
+	num = tag_database_user_get_all(client->database, &users);
+	for(i=0;i<num;i++)
+	{
+		network_client_printf(client, "name: %s\r\n", users[i].name);
+	}
+	return COMMANDS_OK;
+}
 
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv)
 {

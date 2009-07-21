@@ -31,7 +31,8 @@
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
 #define SELECT_USER_BY_NICK "SELECT password, permission FROM users WHERE nick=?"
-#define SELECT_ALL_USER_QUERY "SELECT * FROM users"
+#define SELECT_ALL_USER_QUERY "SELECT rowid,* FROM users"
+#define SELECT_USER_NUM "SELECT count(*) FROM users"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
@@ -369,5 +370,58 @@ extern gint tag_database_user_get_permission
 		permission = 0;
 	sqlite3_finalize(stmt);
 	return permission;
+}
+
+gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **user)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	gint num = 0;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_NUM, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_USER_NUM\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		num = (gint)sqlite3_column_int64(stmt,0);
+		if(num)
+		{
+			*user = (struct TagUser*)g_new0(struct TagUser*, num);
+		}
+	}
+	sqlite3_finalize(stmt);
+	if(!num)
+		return 0;
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_ALL_USER_QUERY, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ALL_USER_QUERY\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	num = 0;
+	while(rc == SQLITE_ROW)
+	{
+		user[num] = g_new0(struct TagUser, 1);
+		user[num]->id = (gint)sqlite3_column_int64(stmt,0);
+		g_strlcpy(user[num]->name, (gchar*)sqlite3_column_text(stmt,1), sizeof(user[num]->name));
+		g_strlcpy(user[num]->surname, (gchar*)sqlite3_column_text(stmt,2), sizeof(user[num]->surname));
+		g_strlcpy(user[num]->nick, (gchar*)sqlite3_column_text(stmt,3), sizeof(user[num]->nick));
+		g_strlcpy(user[num]->email, (gchar*)sqlite3_column_text(stmt,4), sizeof(user[num]->email));
+		user[num]->age = (gint)sqlite3_column_int64(stmt,5);
+		user[num]->weight = (gint)sqlite3_column_int64(stmt,6); 
+		user[num]->size = (gint)sqlite3_column_int64(stmt,7); 
+		user[num]->gender = (gint)sqlite3_column_int64(stmt,8); 
+		user[num]->permission = (gint)sqlite3_column_int64(stmt,9);
+		rc = sqlite3_step(stmt);
+		num++;
+	}
+	sqlite3_finalize(stmt);
+	return num;
 }
 
