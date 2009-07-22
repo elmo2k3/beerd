@@ -16,14 +16,30 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
+/*!
+ * \file	commandline.h
+ * \brief	parser for the command line options
+ * \author	Bjoern Biesenbach <bjoern at bjoern-b dot de>
+*/
+
 #ifndef __COMMANDLINE_H__
 #define __COMMANDLINE_H__
 
+/*!
+ * struct holding options parsed from the commandline
+ */
 struct CmdOptions
 {
-    gboolean disable_tagreader;
+    gboolean disable_tagreader; /**< tagreader disabled */
 };
 
+/**
+ * \param options is a #CmdOptions
+ * \param argc number of arguments
+ * \param argv arguments to parse
+ * \return 0 on failure, 1 on success
+ */
 extern gint command_line_parse
 (struct CmdOptions *options, int argc, char* argv[]);
 

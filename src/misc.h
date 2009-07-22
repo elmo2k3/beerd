@@ -19,7 +19,22 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
+/** @file misc.h
+ * Some helpful functions
+ */
+
+/**
+ * \param filename path
+ * \return 0 on failure, 1 on success
+ */
 extern int fileExists(char *filename);
+
+/**
+ * \param buffer the long line with command and parameters
+ * \param array to store the command and the parameters
+ * \param max chars to parse
+ * \returns number of values stored in array
+ */
 extern int buffer2array(char *buffer, char *array[], const int max);
 
 #endif

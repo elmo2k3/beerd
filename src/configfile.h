@@ -31,18 +31,21 @@
 #define CONFIG_DEFAULT_PORT 5335
 #define CONFIG_DEFAULT_MAX_CLIENTS 10
 
+/*!
+ * struct holding values parsed from configfile
+ */
 struct _config
 {
-	char rfid_serial_port[128];
-	int rfid_timeout;
-	char sqlite_file[128];
-	int server_port;
-	int max_clients;
+	char rfid_serial_port[128]; /**< serial device for rfid tag reader */
+	int rfid_timeout;			/**< timeout in seconds for logging the same tag */
+	char sqlite_file[128];		/**< location of the sqlite database file */
+	int server_port;			/**< port the server will listen on tcp */
+	int max_clients;			/**< max num of simultanous clients */
 }config;
 
 /**
- * @param *conf config file to load
- * @return 0 on failure, 1 on success
+ * \param conf is a #_config
+ * \return 0 on failure, 1 on success
  */
 extern int config_load(char *conf);
 extern int config_save(char *conf);

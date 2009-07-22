@@ -19,6 +19,10 @@
 #ifndef __NETWORK_H__
 #define __NETWORK_H__
 
+/** @file network.h
+ * Implementation of the network server
+ */
+
 #include <glib.h>
 #include "tag_database.h"
 
@@ -34,26 +38,52 @@ enum NetworkClientPermission
 	NETWORK_CLIENT_PERMISSION_ADMIN
 };
 
+/*!
+ * a tcp server
+ */
 struct NetworkServer
 {
-	int fd;
-	guint listen_watch;
-	struct TagDatabase *database;
+	int fd;	/**< socket descriptor */
+	guint listen_watch;	/**< glib channel watcher */
+	struct TagDatabase *database;	/**< the database associated with the server */
 };
 
+/*!
+ * a network client
+ */
 struct client
 {
-	int fd;
-	guint num;
-	GIOChannel *channel;
-	guint source_id;
-	struct TagDatabase *database;
-	gint permission;
-	gchar random_number[11];
+	int fd;					/**< socket descriptor */
+	guint num;				/**< number of the client, beginning with zero */
+	GIOChannel *channel; 	/**< glib io channel */
+	guint source_id; 		/**< glib source */
+	struct TagDatabase *database; /**< the database the server and all client will use */
+	gint permission;		/** permission level of the client (NONE,READ,ADMIN) */
+	gchar random_number[11]; /** random string used for authentification */
 };
 
+/**
+ * Create a new TCP Server
+ *
+ * \param database is a #TagDatabase
+ * \returns dynamically allocated data of the server. use g_free later
+ */
 extern struct NetworkServer *network_server_new(struct TagDatabase *database);
+
+/**
+ * send a string to a client. printf style
+ *
+ * \param client is a #client
+ * \param format like in printf
+ * \returns 0 on failure, 1 on success
+ */
 extern gboolean network_client_printf(struct client *client, char *format, ...);
+
+/**
+ * disconnect a client
+ *
+ * \param client is a #client
+ */
 extern void network_client_disconnect(struct client *client);
 
 #endif

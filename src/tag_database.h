@@ -20,6 +20,10 @@
 #ifndef __TAG_DATABASE_H__
 #define __TAG_DATABASE_H__
 
+/** @file tag_database.h
+ * Sqlite database handling
+ */
+
 #include <stdio.h>
 #include <glib.h>
 #include <sqlite3.h>

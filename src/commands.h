@@ -19,6 +19,10 @@
 #ifndef __COMMANDS_H__
 #define __COMMANDS_H__
 
+/** @file commands.h
+ * Handling of received commands
+ */
+
 enum commands_status
 {
     COMMANDS_OK,
