@@ -16,6 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
 #include <stdio.h>
 #include <glib.h>
 
@@ -65,11 +66,10 @@ int main(int argc, char *argv[])
     if(!options.disable_tagreader)
     {
         tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-        if(tag_reader == NULL)
-        {
-            return -1;
-        }
-        rfid_tag_reader_set_callback(tag_reader, tag_read, database);
+        if(tag_reader)
+            rfid_tag_reader_set_callback(tag_reader, tag_read, database);
+        else
+            fprintf(stderr,"Error opening serial device for tagreader\n");
     }
 
     server = network_server_new(database);
