@@ -23,50 +23,56 @@
 #include "rfid_tag_reader.h"
 #include "tag_database.h"
 #include "network.h"
+#include "commandline.h"
 
 void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
-	struct TagUser user;
-	gint auth_successfull;
-	time_t rawtime;
-	struct TagDatabase *database = (struct TagDatabase*)user_data;
-	
-	time(&rawtime);
-	tag_database_action_insert(database, rawtime, ACTION_TAG_READ, rfid_tag_reader_last_tag(tag_reader), NULL);
-	printf("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
-	auth_successfull = tag_database_tag_exists(database, tag_reader->tagid);
-	if(auth_successfull)
-	{
-		printf("auth successfull   ");
-		if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
-		{
-			printf("nick = %s", user.nick);
-		}
-		printf("\n");
-	}
-	else
-		printf("auth not successfull\n");
+    struct TagUser user;
+    gint auth_successfull;
+    time_t rawtime;
+    struct TagDatabase *database = (struct TagDatabase*)user_data;
+    
+    time(&rawtime);
+    tag_database_action_insert(database, rawtime, ACTION_TAG_READ, rfid_tag_reader_last_tag(tag_reader), NULL);
+    printf("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
+    auth_successfull = tag_database_tag_exists(database, tag_reader->tagid);
+    if(auth_successfull)
+    {
+        printf("auth successfull   ");
+        if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
+        {
+            printf("nick = %s", user.nick);
+        }
+        printf("\n");
+    }
+    else
+        printf("auth not successfull\n");
 }
 
 int main(int argc, char *argv[])
 {
-	struct RfidTagReader *tag_reader;
-	struct TagDatabase *database;
-	struct NetworkServer *server;
+    struct RfidTagReader *tag_reader;
+    struct TagDatabase *database;
+    struct NetworkServer *server;
     GMainLoop *loop;
+    struct CmdOptions options;
 
-	config_load("beerd.conf");
+    command_line_parse(&options, argc, argv);
+    config_load("beerd.conf");
 
-	database = tag_database_new(config.sqlite_file); 
+    database = tag_database_new(config.sqlite_file); 
 
-	tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-	if(tag_reader == NULL)
-	{
-		return -1;
-	}
-	rfid_tag_reader_set_callback(tag_reader, tag_read, database);
+    if(!options.disable_tagreader)
+    {
+        tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
+        if(tag_reader == NULL)
+        {
+            return -1;
+        }
+        rfid_tag_reader_set_callback(tag_reader, tag_read, database);
+    }
 
-	server = network_server_new(database);
+    server = network_server_new(database);
     loop = g_main_loop_new(NULL,FALSE);
     g_main_loop_run(loop);
 
