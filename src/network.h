@@ -49,6 +49,7 @@ struct client
 	guint source_id;
 	struct TagDatabase *database;
 	gint permission;
+	gchar random_number[11];
 };
 
 extern struct NetworkServer *network_server_new(struct TagDatabase *database);

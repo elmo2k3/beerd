@@ -336,17 +336,13 @@ gint tag_database_tag_insert
 }
 
 extern gint tag_database_user_get_permission
-(struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime)
+(struct TagDatabase *database, gchar *nick, gchar *password, gchar *auth_string)
 {
 	int rc;
 	sqlite3_stmt *stmt;
 	gint permission;
 	gchar buffer[512];
 	
-	/* some checks for plausability */
-	if(!rawtime || rawtime < 1248201327 || rawtime > 1910889327)
-		return 0;
-
 	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
@@ -359,7 +355,7 @@ extern gint tag_database_user_get_permission
 	{
 		GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA256);
 		
-		g_sprintf(buffer,"%s%ld",sqlite3_column_text(stmt,0), rawtime);
+		g_sprintf(buffer,"%s%s",sqlite3_column_text(stmt,0), auth_string);
 		g_checksum_update(checksum, (guchar*)buffer, strlen(buffer));
 		if(g_strcmp0(g_checksum_get_string(checksum), password))
 		{
@@ -520,10 +516,16 @@ extern gint tag_database_actions_get_all(struct TagDatabase *database, struct Ta
 		action[num].rowid = (gint)sqlite3_column_int64(stmt,0);
 		action[num].timestamp = (time_t)sqlite3_column_int64(stmt,1);
 		action[num].action_id = (gint)sqlite3_column_int64(stmt,2);
-		g_strlcpy(action[num].action_value1, 
-			(gchar*)sqlite3_column_text(stmt,3), sizeof(action[num].action_value1));
-		g_strlcpy(action[num].action_value2, 
-			(gchar*)sqlite3_column_text(stmt,4), sizeof(action[num].action_value2));
+		if(sqlite3_column_text(stmt,3))
+		{
+			g_strlcpy(action[num].action_value1, 
+				(gchar*)sqlite3_column_text(stmt,3), sizeof(action[num].action_value1));
+		}
+		if(sqlite3_column_text(stmt,4))
+		{
+			g_strlcpy(action[num].action_value2, 
+				(gchar*)sqlite3_column_text(stmt,4), sizeof(action[num].action_value2));
+		}
 		rc = sqlite3_step(stmt);
 		num++;
 	}

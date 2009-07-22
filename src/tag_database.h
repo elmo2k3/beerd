@@ -106,7 +106,7 @@ extern gint tag_database_user_get_by_id
 (struct TagDatabase *database, gint user_id, struct TagUser *user);
 
 extern gint tag_database_user_get_permission
-(struct TagDatabase *database, gchar *nick, gchar *password, time_t rawtime);
+(struct TagDatabase *database, gchar *nick, gchar *password, gchar *random_number);
 
 extern gint tag_database_user_get_all(struct TagDatabase *database, struct TagUser **users);
 extern gint tag_database_tags_get_all(struct TagDatabase *database, struct Tag **tags);

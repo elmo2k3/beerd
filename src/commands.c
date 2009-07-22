@@ -45,8 +45,9 @@ static enum commands_status action_auth(struct client *client, int argc, char **
 static enum commands_status action_get_all_users(struct client *client, int argc, char **argv);
 static enum commands_status action_get_all_tags(struct client *client, int argc, char **argv);
 static enum commands_status action_get_all_actions(struct client *client, int argc, char **argv);
+static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 11
+#define NUM_COMMANDS 12
 static struct command commands[] = {
     {"commands", 0, 0,      NETWORK_CLIENT_PERMISSION_NONE, action_commands},
     {"last_tagid", 0, 0,    NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
@@ -55,11 +56,18 @@ static struct command commands[] = {
     {"insert_tag",3,3,      NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_tag},
     {"get_user_by_id",1,1,  NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_id},
     {"get_user_by_tag",1,1, NETWORK_CLIENT_PERMISSION_READ, action_get_user_by_tag},
-    {"auth",3,3,            NETWORK_CLIENT_PERMISSION_NONE, action_auth},
+    {"auth",2,2,            NETWORK_CLIENT_PERMISSION_NONE, action_auth},
     {"get_all_users",0,0,   NETWORK_CLIENT_PERMISSION_READ, action_get_all_users},
     {"get_all_tags",0,0,    NETWORK_CLIENT_PERMISSION_READ, action_get_all_tags},
-    {"get_all_actions",0,0, NETWORK_CLIENT_PERMISSION_READ, action_get_all_actions}
+    {"get_all_actions",0,0, NETWORK_CLIENT_PERMISSION_READ, action_get_all_actions},
+    {"get_auth_string",0,0, NETWORK_CLIENT_PERMISSION_NONE, action_get_auth_string}
     };
+
+static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv)
+{
+    network_client_printf(client,"auth_string: %s\r\n",client->random_number);
+    return COMMANDS_OK;
+}
 
 static void print_user(struct client *client, struct TagUser *user)
 {
@@ -149,7 +157,7 @@ static enum commands_status action_get_user_by_id(struct client *client, int arg
 static enum commands_status action_auth(struct client *client, int argc, char **argv)
 {
     client->permission = tag_database_user_get_permission
-        (client->database, argv[1], argv[2], (time_t)atoi(argv[3]));
+        (client->database, argv[1], argv[2], client->random_number);
     switch(client->permission)
     {
         case NETWORK_CLIENT_PERMISSION_NONE: 
