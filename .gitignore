@@ -32,6 +32,9 @@ ltmain.sh
 missing
 mkinstalldirs
 beerd
+.*.swp
+*.sqlite3
+Session.vim
 stamp-h1
 tags
 *~
