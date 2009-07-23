@@ -176,7 +176,7 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
     struct TagUser user;
     GChecksum *checksum;
 
-    checksum = g_checksum_new(G_CHECKSUM_SHA256);
+    checksum = g_checksum_new(G_CHECKSUM_SHA1);
     g_checksum_update(checksum, (guchar*)argv[10], strlen(argv[10]));
     g_strlcpy(user.name, argv[1], sizeof(user.name));
     g_strlcpy(user.surname, argv[2], sizeof(user.surname));

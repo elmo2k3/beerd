@@ -353,7 +353,7 @@ extern gint tag_database_user_get_permission
 	rc = sqlite3_step(stmt);
 	if(rc == SQLITE_ROW)
 	{
-		GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA256);
+		GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA1);
 		
 		g_sprintf(buffer,"%s%s",sqlite3_column_text(stmt,0), auth_string);
 		g_checksum_update(checksum, (guchar*)buffer, strlen(buffer));
