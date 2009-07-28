@@ -250,6 +250,7 @@ enum commands_status commands_process(struct client *client, gchar *cmdline)
         pos = g_strstr_len(cmdline, -1, commands[i].cmd);
         if(pos == cmdline) // command must be at the beginning of the line
         {
+            network_client_printf(client,"command: %s\r\n",commands[i].cmd);
             argc = buffer2array(cmdline, argv, 1024) -1 ;
             if(argc < commands[i].min_params || argc > commands[i].max_params)
                 return COMMANDS_FAIL;

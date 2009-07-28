@@ -30,6 +30,13 @@
 #define CONFIG_DEFAULT_SQLITE_FILE "beerd.sqlite3"
 #define CONFIG_DEFAULT_PORT 5335
 #define CONFIG_DEFAULT_MAX_CLIENTS 10
+#define CONFIG_DEFAULT_USE_SQLITE 1
+#define CONFIG_DEFAULT_USE_MYSQL 0
+#define CONFIG_DEFAULT_MYSQL_HOST "localhost"
+#define CONFIG_DEFAULT_MYSQL_DB "beer"
+#define CONFIG_DEFAULT_MYSQL_USER "beer"
+#define CONFIG_DEFAULT_MYSQL_PASSWORD ""
+
 
 /*!
  * struct holding values parsed from configfile
@@ -41,6 +48,12 @@ struct _config
 	char sqlite_file[128];		/**< location of the sqlite database file */
 	int server_port;			/**< port the server will listen on tcp */
 	int max_clients;			/**< max num of simultanous clients */
+	int use_sqlite;
+	int use_mysql;
+	char mysql_host[128];
+	char mysql_database[128];
+	char mysql_user[128];
+	char mysql_password[128];
 }config;
 
 /**

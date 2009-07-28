@@ -1,4 +1,4 @@
-LDFLAGS = `pkg-config --libs glib-2.0 sqlite3`
+LDFLAGS = `pkg-config --libs glib-2.0 sqlite3` -lmysqlclient
 CFLAGS = `pkg-config --cflags glib-2.0 sqlite3` -g -Wall
 
 .PHONY: clean

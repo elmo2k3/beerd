@@ -154,7 +154,7 @@ static gboolean listen_in_event
         client->fd = fd;
         client->permission = 0;
         client->channel = g_io_channel_unix_new(fd);
-        g_sprintf(client->random_number,"%ld",g_random_int());
+        g_sprintf(client->random_number,"%d",g_random_int());
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);
 //        g_io_channel_set_buffered(client->channel, FALSE);

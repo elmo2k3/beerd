@@ -31,9 +31,10 @@
 
 #include "configfile.h"
 
-#define NUM_PARAMS 5
+#define NUM_PARAMS 11
 static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout", "db_file",
-	"port","max_clients"	};
+	"port","max_clients", "use_sqlite", "use_mysql", "mysql_host", "mysql_database",
+	"mysql_user", "mysql_password"};
 
 int config_save(char *conf)
 {
@@ -66,6 +67,12 @@ int config_load(char *conf)
 	strcpy(config.sqlite_file, CONFIG_DEFAULT_SQLITE_FILE);
 	config.server_port = CONFIG_DEFAULT_PORT;
 	config.max_clients = CONFIG_DEFAULT_MAX_CLIENTS;
+	config.use_sqlite = CONFIG_DEFAULT_USE_SQLITE;
+	config.use_mysql = CONFIG_DEFAULT_USE_MYSQL;
+	strcpy(config.mysql_host, CONFIG_DEFAULT_MYSQL_HOST);
+	strcpy(config.mysql_database, CONFIG_DEFAULT_MYSQL_DB);
+	strcpy(config.mysql_user, CONFIG_DEFAULT_MYSQL_USER);
+	strcpy(config.mysql_password, CONFIG_DEFAULT_MYSQL_PASSWORD);
 
 	config_file = fopen(conf,"r");
 	if(!config_file)
@@ -122,6 +129,29 @@ int config_load(char *conf)
 				/* max number of clients */
 				case 4: config.max_clients = atoi(value);
 						break;
+				/* use sqlite */
+				case 5: config.use_sqlite = atoi(value);
+						break;
+				/* use mysql*/
+				case 6: config.use_mysql = atoi(value);
+						break;
+				/* mysql host */
+				case 7: strncpy(config.mysql_host,value,
+							sizeof(config.mysql_host));
+						break;
+				/* mysql database */
+				case 8: strncpy(config.mysql_database,value,
+							sizeof(config.mysql_database));
+						break;
+				/* mysql user */
+				case 9: strncpy(config.mysql_user,value,
+							sizeof(config.mysql_user));
+						break;
+				/* mysql password */
+				case 10: strncpy(config.mysql_password,value,
+							sizeof(config.mysql_password));
+						break;
+
 			}
 		}
 	}
