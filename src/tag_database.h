@@ -105,6 +105,9 @@ extern gint tag_database_user_get_by_tag
 extern gint tag_database_user_insert
 (struct TagDatabase *database, struct TagUser *user);
 
+extern gint tag_database_user_update
+(struct TagDatabase *database, struct TagUser *user);
+
 extern gint tag_database_tag_insert
 (struct TagDatabase *database, gchar *tagid, gint user_id, gint permission);
 

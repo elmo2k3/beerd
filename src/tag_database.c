@@ -28,6 +28,7 @@
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
 #define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT)"
+#define CREATE_ADMIN_USER "INSERT INTO users (nick, password, permission) VALUES ('admin','600982cf9c0c41e12df616d2a9a72d675345ced7',2)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
 #define SELECT_USER_QUERY "SELECT * FROM users WHERE rowid=?"
@@ -43,6 +44,8 @@
 
 #define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
 #define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission,password) VALUES (?,?,?,?,?,?,?,?,?,?)"
+#define UPDATE_USER_QUERY "UPDATE users SET name=?, surname=?, nick=?, email=?, age=?, weight=?, size=?, gender=?, permission=?, password=? WHERE rowid=?"
+#define UPDATE_USER_QUERY_WO_PW "UPDATE users SET name=?, surname=?, nick=?, email=?, age=?, weight=?, size=?, gender=?, permission=? WHERE rowid=?"
 #define INSERT_TAG_QUERY "INSERT INTO tags (tag,user_id,permission) VALUES (?,?,?)"
 
 #define INSERT_ACTION_QUERY_MYSQL "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES ('%ld','%d','%s','%s')"
@@ -133,6 +136,13 @@ static int createDatabaseLayout(struct TagDatabase *database)
 		return -1;
 	}
 	rc = sqlite3_exec(database->db, CREATE_TABLE_ACTIONS_QUERY,  0, 0, &zErrMsg);
+	if(rc != SQLITE_OK)
+	{
+		fprintf(stderr,"sqlerror: %s", zErrMsg);
+		sqlite3_free(zErrMsg);
+		return -1;
+	}
+	rc = sqlite3_exec(database->db, CREATE_ADMIN_USER,  0, 0, &zErrMsg);
 	if(rc != SQLITE_OK)
 	{
 		fprintf(stderr,"sqlerror: %s", zErrMsg);
@@ -300,7 +310,6 @@ gint tag_database_action_insert
 		}
 		else
 		{
-			value2_escaped[0] = 'a';
 			value2_escaped[1] = '\0';
 		}
 			
@@ -401,6 +410,44 @@ gint tag_database_user_insert
 			              mysql_error(database->mysql));
 		}
 	}
+	return 1;
+}
+
+gint tag_database_user_update
+(struct TagDatabase *database, struct TagUser *user)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	g_debug("strlen user->password = %d",strlen(user->password));
+	if(strlen(user->password))
+		rc = sqlite3_prepare_v2(database->db, UPDATE_USER_QUERY, -1, &stmt, NULL);
+	else
+		rc = sqlite3_prepare_v2(database->db, UPDATE_USER_QUERY_WO_PW, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error UPDATE_USER_QUERY\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, user->name, -1, NULL);
+	sqlite3_bind_text(stmt, 2, user->surname, -1, NULL);
+	sqlite3_bind_text(stmt, 3, user->nick, -1, NULL);
+	sqlite3_bind_text(stmt, 4, user->email, -1, NULL);
+	sqlite3_bind_int64(stmt, 5, (sqlite3_int64)user->age);
+	sqlite3_bind_int64(stmt, 6, (sqlite3_int64)user->weight);
+	sqlite3_bind_int64(stmt, 7, (sqlite3_int64)user->size);
+	sqlite3_bind_int64(stmt, 8, (sqlite3_int64)user->gender);
+	sqlite3_bind_int64(stmt, 9, (sqlite3_int64)user->permission);
+	if(strlen(user->password))
+	{
+		sqlite3_bind_text(stmt, 10, user->password, -1, NULL);
+		sqlite3_bind_int64(stmt, 11, (sqlite3_int64)user->id);
+	}
+	else
+		sqlite3_bind_int64(stmt, 10, (sqlite3_int64)user->id);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	
 	return 1;
 }
 

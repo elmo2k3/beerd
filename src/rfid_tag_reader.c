@@ -16,6 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <stdlib.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <string.h>
@@ -113,6 +114,7 @@ struct RfidTagReader *rfid_tag_reader_new(char *serial_device)
     GIOChannel *serial_device_chan = g_io_channel_unix_new(fd);
     guint serial_watch = g_io_add_watch(serial_device_chan, G_IO_IN, 
 		(GIOFunc)serialReceive, rfid_tag_reader_to_return);
+	g_io_add_watch(serial_device_chan, G_IO_ERR, (GIOFunc)exit, NULL);
     g_io_channel_unref(serial_device_chan);
 	rfid_tag_reader_to_return->serial_port_watcher = serial_watch;
 

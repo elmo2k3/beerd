@@ -46,8 +46,9 @@ static enum commands_status action_get_all_users(struct client *client, int argc
 static enum commands_status action_get_all_tags(struct client *client, int argc, char **argv);
 static enum commands_status action_get_all_actions(struct client *client, int argc, char **argv);
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv);
+static enum commands_status action_update_user(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 12
+#define NUM_COMMANDS 13
 static struct command commands[] = {
     {"commands", 0, 0,      NETWORK_CLIENT_PERMISSION_NONE, action_commands},
     {"last_tagid", 0, 0,    NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
@@ -60,7 +61,8 @@ static struct command commands[] = {
     {"get_all_users",0,0,   NETWORK_CLIENT_PERMISSION_READ, action_get_all_users},
     {"get_all_tags",0,0,    NETWORK_CLIENT_PERMISSION_READ, action_get_all_tags},
     {"get_all_actions",0,0, NETWORK_CLIENT_PERMISSION_READ, action_get_all_actions},
-    {"get_auth_string",0,0, NETWORK_CLIENT_PERMISSION_NONE, action_get_auth_string}
+    {"get_auth_string",0,0, NETWORK_CLIENT_PERMISSION_NONE, action_get_auth_string},
+    {"update_user",11,11, NETWORK_CLIENT_PERMISSION_ADMIN, action_update_user}
     };
 
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv)
@@ -190,6 +192,35 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
     g_strlcpy(user.password, g_checksum_get_string(checksum), sizeof(user.password));
     tag_database_user_insert(client->database, &user);
     g_checksum_free(checksum);
+    return COMMANDS_OK;
+}
+
+static enum commands_status action_update_user(struct client *client, int argc, char **argv)
+{
+    struct TagUser user;
+    GChecksum *checksum;
+
+    if(strlen(argv[11]))
+    {
+        checksum = g_checksum_new(G_CHECKSUM_SHA1);
+        g_checksum_update(checksum, (guchar*)argv[11], strlen(argv[11]));
+        g_strlcpy(user.password, g_checksum_get_string(checksum), sizeof(user.password));
+        g_checksum_free(checksum);
+    }
+    else
+        user.password[0] = '\0';
+
+    user.id = atoi(argv[1]);
+    g_strlcpy(user.name, argv[2], sizeof(user.name));
+    g_strlcpy(user.surname, argv[3], sizeof(user.surname));
+    g_strlcpy(user.nick, argv[4], sizeof(user.nick));
+    g_strlcpy(user.email, argv[5], sizeof(user.email));
+    user.age = atoi(argv[6]);
+    user.weight = atoi(argv[7]);
+    user.size = atoi(argv[8]);
+    user.gender = atoi(argv[9]);
+    user.permission = atoi(argv[10]);
+    tag_database_user_update(client->database, &user);
     return COMMANDS_OK;
 }
 
