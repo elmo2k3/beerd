@@ -143,7 +143,7 @@ static gboolean listen_in_event
         if(num_clients >= config.max_clients)
         {
             close(fd);
-            return FALSE;
+            return TRUE;
         }
         g_debug("client %d connected",num_clients);    
         client = g_new0(struct client, 1);
