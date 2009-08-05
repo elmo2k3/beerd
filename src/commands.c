@@ -253,15 +253,19 @@ static enum commands_status action_last_tagid(struct client *client, int argc, c
     gchar *last_tag;
     gchar date[256];
     struct tm ptm;
+    struct TagUser user; 
 
     last_tag = tag_database_tag_last_read(client->database, &timestamp);
     localtime_r(&timestamp, &ptm);
     strftime(date, sizeof(date), "%c", &ptm);
     
-    if(!network_client_printf(client, "time_last_tagid: %s\r\n",date))
-        return COMMANDS_DISCONNECT;
-    if(!network_client_printf(client, "last_tagid: %s\r\n",last_tag))
-        return COMMANDS_DISCONNECT;
+    network_client_printf(client, "time_last_tagid: %s\r\n",date);
+    network_client_printf(client, "last_tagid: %s\r\n",last_tag);
+    if(tag_database_user_get_by_tag(client->database, last_tag, &user))
+        network_client_printf(client, "user_id: %d\r\n", user.id);
+    else
+        network_client_printf(client, "user_id: 0\r\n");
+
     return COMMANDS_OK;
 }
 

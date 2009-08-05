@@ -419,7 +419,6 @@ gint tag_database_user_update
 	int rc;
 	sqlite3_stmt *stmt;
 	
-	g_debug("strlen user->password = %d",strlen(user->password));
 	if(strlen(user->password))
 		rc = sqlite3_prepare_v2(database->db, UPDATE_USER_QUERY, -1, &stmt, NULL);
 	else
