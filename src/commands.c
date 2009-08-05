@@ -99,7 +99,8 @@ static enum commands_status action_get_all_tags(struct client *client, int argc,
         network_client_printf(client,"userid: %d\r\n",tags[i].userid);
         network_client_printf(client,"permission: %d\r\n",tags[i].permission);
     }
-    g_free(tags);
+    if(num)
+        g_free(tags);
     return COMMANDS_OK;
 }
 
@@ -118,7 +119,8 @@ static enum commands_status action_get_all_actions(struct client *client, int ar
         network_client_printf(client,"action_value1: %s\r\n",actions[i].action_value1);
         network_client_printf(client,"action_value2: %s\r\n",actions[i].action_value2);
     }
-    g_free(actions);
+    if(num)
+        g_free(actions);
     return COMMANDS_OK;
 }
 
@@ -133,7 +135,8 @@ static enum commands_status action_get_all_users(struct client *client, int argc
     {
         print_user(client,&users[i]);
     }
-    g_free(users);
+    if(num)
+        g_free(users);
     return COMMANDS_OK;
 }
 
