@@ -280,7 +280,7 @@ enum commands_status commands_process(struct client *client, gchar *cmdline)
     char *argv[1024] = { NULL };
     int argc;
     
-    g_debug("processing command from client %d: %s", client->num, cmdline);
+    g_debug("processing command from client %d %s: %s", client->num,client->addr_string, cmdline);
     
     ret = COMMANDS_FAIL;
     for(i = 0;i < NUM_COMMANDS; i++)

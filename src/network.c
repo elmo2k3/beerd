@@ -135,6 +135,7 @@ static gboolean listen_in_event
     fd = accept(server->fd, (struct sockaddr*)&sa, &sa_length);
     if(fd >= 0)
     {
+        char servername[NI_MAXSERV];
         /* set nonblocking. copy&paste from mpd */
         while ((flags = fcntl(fd, F_GETFL)) < 0 && errno == EINTR);
         flags |= O_NONBLOCK;
@@ -154,6 +155,9 @@ static gboolean listen_in_event
         client->fd = fd;
         client->permission = 0;
         client->channel = g_io_channel_unix_new(fd);
+        getnameinfo((struct sockaddr*)&sa, sa_length, client->addr_string, NI_MAXHOST,
+            servername,sizeof(servername), NI_NUMERICHOST|NI_NUMERICSERV);
+        client->addr_string[30] = '\0';
         g_sprintf(client->random_number,"%d",g_random_int());
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);

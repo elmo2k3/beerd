@@ -23,6 +23,7 @@
  * Implementation of the network server
  */
 
+#include <netdb.h>
 #include <glib.h>
 #include "tag_database.h"
 
@@ -60,6 +61,7 @@ struct client
 	struct TagDatabase *database; /**< the database the server and all client will use */
 	gint permission;		/** permission level of the client (NONE,READ,ADMIN) */
 	gchar random_number[11]; /** random string used for authentification */
+	gchar addr_string[NI_MAXHOST];
 };
 
 /**
