@@ -41,7 +41,7 @@ int config_save(char *conf)
 	FILE *config_file = fopen(conf,"w");
 	if(!config_file)
 		return 0;
-	fprintf(config_file,"rfid_serial_port = %s\n",config.rfid_serial_port);
+	fprintf(config_file,"rfid_serial_port = %s\n",config.rfid_serial_port[0]);
 	fprintf(config_file,"rfid_timeout = %d\n",config.rfid_timeout);
 	fprintf(config_file,"db_file = %s\n",config.sqlite_file);
 	fprintf(config_file,"port = %d\n",config.server_port);
@@ -57,12 +57,14 @@ int config_load(char *conf)
 	char value[100];
 	char *lpos;
 	int param;
+	int num_readers = 0;
 
 	/* set everything to zero */
 	memset(&config, 0, sizeof(config));
 	
 	/* default values */
-	strcpy(config.rfid_serial_port, CONFIG_DEFAULT_RFID_SERIAL_PORT);
+	config.num_rfid_readers = 1;
+	strcpy(config.rfid_serial_port[0], CONFIG_DEFAULT_RFID_SERIAL_PORT);
 	config.rfid_timeout = CONFIG_DEFAULT_RFID_TIMEOUT;
 	strcpy(config.sqlite_file, CONFIG_DEFAULT_SQLITE_FILE);
 	config.server_port = CONFIG_DEFAULT_PORT;
@@ -113,8 +115,9 @@ int config_load(char *conf)
 			switch(param)
 			{
 				/* serial port for rfid tag reader */
-				case 0: strncpy(config.rfid_serial_port,value,
-							sizeof(config.rfid_serial_port));
+				case 0: strncpy(config.rfid_serial_port[num_readers++],value,
+							128);
+						config.num_rfid_readers = num_readers;
 						break;
 				/* timeout for rfid tag reader */
 				case 1: config.rfid_timeout = atoi(value);

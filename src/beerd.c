@@ -35,19 +35,19 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
     
     time(&rawtime);
     tag_database_action_insert(database, rawtime, ACTION_TAG_READ, rfid_tag_reader_last_tag(tag_reader), NULL);
-    printf("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
+    g_debug("tag read    id = %s   ",rfid_tag_reader_last_tag(tag_reader));
     auth_successfull = tag_database_tag_exists(database, tag_reader->tagid);
     if(auth_successfull)
     {
-        printf("auth successfull   ");
         if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
         {
-            printf("nick = %s", user.nick);
+            g_debug("tag known: nick = %s", user.nick);
         }
-        printf("\n");
     }
     else
-        printf("auth not successfull\n");
+    {
+        g_debug("tag unknown");
+    }
 }
 
 int main(int argc, char *argv[])
@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     struct NetworkServer *server;
     GMainLoop *loop;
     struct CmdOptions options;
+    int i;
 
     command_line_parse(&options, argc, argv);
     config_load("beerd.conf");
@@ -65,11 +66,14 @@ int main(int argc, char *argv[])
 
     if(!options.disable_tagreader)
     {
-        tag_reader = rfid_tag_reader_new(config.rfid_serial_port);
-        if(tag_reader)
-            rfid_tag_reader_set_callback(tag_reader, tag_read, database);
-        else
-            fprintf(stderr,"Error opening serial device for tagreader\n");
+        for(i=0;i < config.num_rfid_readers; i++)
+        {
+            tag_reader = rfid_tag_reader_new(config.rfid_serial_port[i]);
+            if(tag_reader)
+                rfid_tag_reader_set_callback(tag_reader, tag_read, database);
+            else
+                fprintf(stderr,"Error opening serial device for tagreader\n");
+        }
     }
 
     server = network_server_new(database);

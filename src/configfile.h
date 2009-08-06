@@ -37,13 +37,16 @@
 #define CONFIG_DEFAULT_MYSQL_USER "beer"
 #define CONFIG_DEFAULT_MYSQL_PASSWORD ""
 
+#define MAX_READERS 5
+
 
 /*!
  * struct holding values parsed from configfile
  */
 struct _config
 {
-	char rfid_serial_port[128]; /**< serial device for rfid tag reader */
+	int num_rfid_readers;
+	char rfid_serial_port[MAX_READERS][128]; /**< serial device for rfid tag reader */
 	int rfid_timeout;			/**< timeout in seconds for logging the same tag */
 	char sqlite_file[128];		/**< location of the sqlite database file */
 	int server_port;			/**< port the server will listen on tcp */
