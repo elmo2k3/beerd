@@ -195,16 +195,20 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
     user.gender = atoi(argv[8]);
     user.permission = atoi(argv[9]);
     g_strlcpy(user.password, g_checksum_get_string(checksum), sizeof(user.password));
-    tag_database_user_insert(client->database, &user);
     g_checksum_free(checksum);
+    
+    if(!tag_database_user_insert(client->database, &user))
+        return COMMANDS_FAIL;
     return COMMANDS_OK;
 }
 
 static enum commands_status action_insert_user_with_tag(struct client *client, int argc, char **argv)
 {
-    action_insert_user(client, argc, argv);
-    tag_database_tag_insert(client->database, argv[11], 
-        (gint)sqlite3_last_insert_rowid(client->database->db), (gint)atoi(argv[12]));
+    if(action_insert_user(client, argc, argv) != COMMANDS_OK)
+        return COMMANDS_FAIL;
+    if(!tag_database_tag_insert(client->database, argv[11], 
+        (gint)sqlite3_last_insert_rowid(client->database->db), (gint)atoi(argv[12])))
+        return COMMANDS_FAIL;
     return COMMANDS_OK;
 }
 
@@ -233,13 +237,15 @@ static enum commands_status action_update_user(struct client *client, int argc, 
     user.size = atoi(argv[8]);
     user.gender = atoi(argv[9]);
     user.permission = atoi(argv[10]);
-    tag_database_user_update(client->database, &user);
+    if(!tag_database_user_update(client->database, &user))
+        return COMMANDS_FAIL;
     return COMMANDS_OK;
 }
 
 static enum commands_status action_insert_tag(struct client *client, int argc, char **argv)
 {
-    tag_database_tag_insert(client->database, argv[1], (gint)atoi(argv[2]), (gint)atoi(argv[3]));
+    if(!tag_database_tag_insert(client->database, argv[1], (gint)atoi(argv[2]), (gint)atoi(argv[3])))
+        return COMMANDS_FAIL;
     return COMMANDS_OK;
 }
 

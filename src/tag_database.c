@@ -358,12 +358,36 @@ gchar *tag_database_tag_last_read
 	return ret;
 }
 
+static gint tag_database_nick_exists
+(struct TagDatabase *database, gchar *nick)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, 1024, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_USER_BY_NICK\n");
+		return 0;
+	}
+	sqlite3_bind_text(stmt, 1, nick, -1, NULL);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	if(rc == SQLITE_ROW)
+		return 1;
+	return 0;
+}
+
+
 gint tag_database_user_insert
 (struct TagDatabase *database, struct TagUser *user)
 {
 	int rc;
 	sqlite3_stmt *stmt;
-	
+
+	if(tag_database_nick_exists(database, user->nick))
+		return 0;
+
 	rc = sqlite3_prepare_v2(database->db, INSERT_USER_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
@@ -419,6 +443,9 @@ gint tag_database_user_update
 	int rc;
 	sqlite3_stmt *stmt;
 	
+	if(tag_database_nick_exists(database, user->nick))
+		return 0;
+	
 	if(strlen(user->password))
 		rc = sqlite3_prepare_v2(database->db, UPDATE_USER_QUERY, -1, &stmt, NULL);
 	else
@@ -455,7 +482,10 @@ gint tag_database_tag_insert
 {
 	int rc;
 	sqlite3_stmt *stmt;
-	
+
+	if(tag_database_tag_exists(database, tagid))
+		return 0;
+
 	rc = sqlite3_prepare_v2(database->db, INSERT_TAG_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
