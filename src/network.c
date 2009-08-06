@@ -146,7 +146,6 @@ static gboolean listen_in_event
             close(fd);
             return TRUE;
         }
-        g_debug("client %d connected",num_clients);    
         client = g_new0(struct client, 1);
         clients = g_list_prepend(clients, client);
         client->num = num_clients;
@@ -158,6 +157,7 @@ static gboolean listen_in_event
         getnameinfo((struct sockaddr*)&sa, sa_length, client->addr_string, NI_MAXHOST,
             servername,sizeof(servername), NI_NUMERICHOST|NI_NUMERICSERV);
         client->addr_string[30] = '\0';
+        g_debug("client %d %s connected",num_clients, client->addr_string);    
         g_sprintf(client->random_number,"%d",g_random_int());
         g_io_channel_set_close_on_unref(client->channel, TRUE);
         g_io_channel_set_encoding(client->channel, NULL, NULL);

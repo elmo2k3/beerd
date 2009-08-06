@@ -38,6 +38,7 @@ static enum commands_status action_commands(struct client *client, int argc, cha
 static enum commands_status action_last_tagid(struct client *client, int argc, char **argv);
 static enum commands_status action_disconnect(struct client *client, int argc, char **argv);
 static enum commands_status action_insert_user(struct client *client, int argc, char **argv);
+static enum commands_status action_insert_user_with_tag(struct client *client, int argc, char **argv);
 static enum commands_status action_insert_tag(struct client *client, int argc, char **argv);
 static enum commands_status action_get_user_by_id(struct client *client, int argc, char **argv);
 static enum commands_status action_get_user_by_tag(struct client *client, int argc, char **argv);
@@ -48,7 +49,7 @@ static enum commands_status action_get_all_actions(struct client *client, int ar
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv);
 static enum commands_status action_update_user(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 13
+#define NUM_COMMANDS 14
 static struct command commands[] = {
     {"commands", 0, 0,      NETWORK_CLIENT_PERMISSION_NONE, action_commands},
     {"last_tagid", 0, 0,    NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
@@ -62,7 +63,8 @@ static struct command commands[] = {
     {"get_all_tags",0,0,    NETWORK_CLIENT_PERMISSION_READ, action_get_all_tags},
     {"get_all_actions",0,0, NETWORK_CLIENT_PERMISSION_READ, action_get_all_actions},
     {"get_auth_string",0,0, NETWORK_CLIENT_PERMISSION_NONE, action_get_auth_string},
-    {"update_user",11,11, NETWORK_CLIENT_PERMISSION_ADMIN, action_update_user}
+    {"update_user",11,11, NETWORK_CLIENT_PERMISSION_ADMIN, action_update_user},
+    {"user_insert_with_tag",12,12, NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_user_with_tag}
     };
 
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv)
@@ -198,6 +200,15 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
     return COMMANDS_OK;
 }
 
+static enum commands_status action_insert_user_with_tag(struct client *client, int argc, char **argv)
+{
+    g_debug("insert user status: %d",action_insert_user(client, argc, argv));
+    g_debug("last user id: %ld", sqlite3_last_insert_rowid(client->database->db));
+    tag_database_tag_insert(client->database, argv[11], 
+        (gint)sqlite3_last_insert_rowid(client->database->db), (gint)atoi(argv[12]));
+    return COMMANDS_OK;
+}
+
 static enum commands_status action_update_user(struct client *client, int argc, char **argv)
 {
     struct TagUser user;
@@ -280,7 +291,8 @@ enum commands_status commands_process(struct client *client, gchar *cmdline)
     char *argv[1024] = { NULL };
     int argc;
     
-    g_debug("processing command from client %d %s: %s", client->num,client->addr_string, cmdline);
+    if(strcmp(cmdline,"last_tagid\n"))
+        g_debug("processing command from client %d %s: %s", client->num,client->addr_string, cmdline);
     
     ret = COMMANDS_FAIL;
     for(i = 0;i < NUM_COMMANDS; i++)
