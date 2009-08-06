@@ -202,6 +202,7 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
 
 static enum commands_status action_insert_user_with_tag(struct client *client, int argc, char **argv)
 {
+    action_insert_user(client, argc, argv);
     tag_database_tag_insert(client->database, argv[11], 
         (gint)sqlite3_last_insert_rowid(client->database->db), (gint)atoi(argv[12]));
     return COMMANDS_OK;
