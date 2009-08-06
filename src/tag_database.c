@@ -509,7 +509,8 @@ extern gint tag_database_user_get_permission
 		
 		g_sprintf(buffer,"%s%s",sqlite3_column_text(stmt,0), auth_string);
 		g_checksum_update(checksum, (guchar*)buffer, strlen(buffer));
-		if(g_strcmp0(g_checksum_get_string(checksum), password))
+		if(g_strcmp0(g_checksum_get_string(checksum), password) ||
+			!g_strcmp0((const char*)sqlite3_column_text(stmt,0),"da39a3ee5e6b4b0d3255bfef95601890afd80709"))
 		{
 			permission = 0;
 		}

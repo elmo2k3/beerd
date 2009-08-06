@@ -163,8 +163,15 @@ static enum commands_status action_get_user_by_id(struct client *client, int arg
 
 static enum commands_status action_auth(struct client *client, int argc, char **argv)
 {
-    client->permission = tag_database_user_get_permission
-        (client->database, argv[1], argv[2], client->random_number);
+    if(!g_strcmp0(argv[2],"da39a3ee5e6b4b0d3255bfef95601890afd80709")) // password is ""
+    {
+        client->permission = NETWORK_CLIENT_PERMISSION_NONE;
+    }
+    else
+    {
+        client->permission = tag_database_user_get_permission
+           (client->database, argv[1], argv[2], client->random_number);
+    }
     switch(client->permission)
     {
         case NETWORK_CLIENT_PERMISSION_NONE: 
@@ -202,8 +209,6 @@ static enum commands_status action_insert_user(struct client *client, int argc, 
 
 static enum commands_status action_insert_user_with_tag(struct client *client, int argc, char **argv)
 {
-    g_debug("insert user status: %d",action_insert_user(client, argc, argv));
-    g_debug("last user id: %ld", sqlite3_last_insert_rowid(client->database->db));
     tag_database_tag_insert(client->database, argv[11], 
         (gint)sqlite3_last_insert_rowid(client->database->db), (gint)atoi(argv[12]));
     return COMMANDS_OK;
