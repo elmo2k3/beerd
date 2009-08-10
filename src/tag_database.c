@@ -443,8 +443,8 @@ gint tag_database_user_update
 	int rc;
 	sqlite3_stmt *stmt;
 	
-	if(tag_database_nick_exists(database, user->nick))
-		return 0;
+//	if(tag_database_nick_exists(database, user->nick))
+//		return 0;
 	
 	if(strlen(user->password))
 		rc = sqlite3_prepare_v2(database->db, UPDATE_USER_QUERY, -1, &stmt, NULL);

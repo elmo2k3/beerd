@@ -45,7 +45,10 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
     {
         if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
         {
+            char buf[1024];
             g_debug("tag known: nick = %s", user.nick);
+            sprintf(buf,"\b~~~~~\a %s \rdraws a b33r",user.nick);
+            ledPushToStack(buf, 1, 2);
         }
     }
     else

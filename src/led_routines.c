@@ -114,7 +114,7 @@ void updateDisplay(struct _ledLine ledLine)
 	}
 	bytes_send = send(client_sock, &RED, sizeof(RED),0);
 	bytes_send = send(client_sock, &GREEN, sizeof(GREEN),0);
-
+	bytes_send = send(client_sock, &ledLine.beep, sizeof(ledLine.beep),0);
 }
 
 /* Achtung, funktioniert derzeit nur fuer font ! */
@@ -303,7 +303,8 @@ int shiftLeft(struct _ledLine *ledLine)
 	}
 
 	ledLine->shift_position++;
-	
+	if(!(ledLine->shift_position % 20))
+		ledLine->beep = 0;
 	if(ledLine->shift_position > ledLine->x + 11)
 	{
 		ledLine->shift_position = 1;
@@ -407,6 +408,7 @@ void ledPushToStack(char *string, int shift, int lifetime)
 			shift = 0;
 		led_line_stack_time[led_stack_size] = lifetime;
 		led_line_stack_shift[led_stack_size] = shift;
+		ledLineStack[led_stack_size].beep = 1;
 		led_stack_size++;
 	}
 	else
@@ -507,7 +509,7 @@ static void ledDisplayMain(struct _ledLine *ledLineToDraw, int shift_speed)
 	{
 		shiftLeft(ledLineToDraw);
 		updateDisplay(*ledLineToDraw);
-		usleep(shift_speed);
+		usleep(40000);
 	}
 	else
 	{
