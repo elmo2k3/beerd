@@ -50,6 +50,11 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
     }
 }
 
+static void logfunc
+(const gchar *log_domain,GLogLevelFlags log_level, const gchar *message, gpointer user_data)
+{
+}
+
 int main(int argc, char *argv[])
 {
     struct RfidTagReader *tag_reader;
@@ -78,6 +83,7 @@ int main(int argc, char *argv[])
 
     server = network_server_new(database);
     loop = g_main_loop_new(NULL,FALSE);
+//    g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, logfunc, NULL);
     g_main_loop_run(loop);
 
     return 0;
