@@ -31,10 +31,10 @@
 
 #include "configfile.h"
 
-#define NUM_PARAMS 11
+#define NUM_PARAMS 13
 static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout", "db_file",
 	"port","max_clients", "use_sqlite", "use_mysql", "mysql_host", "mysql_database",
-	"mysql_user", "mysql_password"};
+	"mysql_user", "mysql_password","led_matrix_ip","led_matrix_port"};
 
 int config_save(char *conf)
 {
@@ -75,6 +75,8 @@ int config_load(char *conf)
 	strcpy(config.mysql_database, CONFIG_DEFAULT_MYSQL_DB);
 	strcpy(config.mysql_user, CONFIG_DEFAULT_MYSQL_USER);
 	strcpy(config.mysql_password, CONFIG_DEFAULT_MYSQL_PASSWORD);
+	strcpy(config.led_matrix_ip, CONFIG_DEFAULT_LED_MATRIX_IP);
+	config.led_matrix_port = CONFIG_DEFAULT_LED_MATRIX_PORT;
 
 	config_file = fopen(conf,"r");
 	if(!config_file)
@@ -153,6 +155,13 @@ int config_load(char *conf)
 				/* mysql password */
 				case 10: strncpy(config.mysql_password,value,
 							sizeof(config.mysql_password));
+						break;
+				/* led matrix ip */
+				case 11: strncpy(config.led_matrix_ip,value,
+							sizeof(config.led_matrix_ip));
+						break;
+				/* led matrix port*/
+				case 12: config.led_matrix_port = atoi(value);
 						break;
 
 			}

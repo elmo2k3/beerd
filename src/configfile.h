@@ -36,6 +36,8 @@
 #define CONFIG_DEFAULT_MYSQL_DB "beer"
 #define CONFIG_DEFAULT_MYSQL_USER "beer"
 #define CONFIG_DEFAULT_MYSQL_PASSWORD ""
+#define CONFIG_DEFAULT_LED_MATRIX_IP "192.168.1.93"
+#define CONFIG_DEFAULT_LED_MATRIX_PORT 9328
 
 #define MAX_READERS 5
 
@@ -57,6 +59,10 @@ struct _config
 	char mysql_database[128];
 	char mysql_user[128];
 	char mysql_password[128];
+	char led_matrix_ip[50]; /**< ip address of led-matrix-display */
+	int led_matrix_port; /**< port of led-matrix-display */
+	int led_matrix_activated; /**< led-matrix-display activated, 0 or 1 */
+	int led_shift_speed; /**< Shift speed for texts on the led matrix */
 }config;
 
 /**

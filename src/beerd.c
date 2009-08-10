@@ -19,12 +19,16 @@
 
 #include <stdio.h>
 #include <glib.h>
+#include <pthread.h>
 
 #include "configfile.h"
 #include "rfid_tag_reader.h"
 #include "tag_database.h"
 #include "network.h"
 #include "commandline.h"
+#include "led_routines.h"
+
+pthread_t led_thread;
 
 void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
@@ -82,6 +86,7 @@ int main(int argc, char *argv[])
     }
 
     server = network_server_new(database);
+    pthread_create(&led_thread,NULL,(void*)&ledMatrixThread,NULL);
     loop = g_main_loop_new(NULL,FALSE);
 //    g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, logfunc, NULL);
     g_main_loop_run(loop);
