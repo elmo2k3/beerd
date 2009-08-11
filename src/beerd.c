@@ -23,6 +23,7 @@
 
 #include "configfile.h"
 #include "rfid_tag_reader.h"
+#include "beer_volume_reader.h"
 #include "tag_database.h"
 #include "network.h"
 #include "commandline.h"
@@ -57,6 +58,21 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
     }
 }
 
+void volume_read(struct BeerVolumeReader *beer_volume_reader, void *user_data)
+{
+    time_t rawtime;
+    char last_barrel[10], last_overall[10];
+    struct TagDatabase *database = (struct TagDatabase*)user_data;
+    
+    time(&rawtime);
+    sprintf(last_barrel,"%d",beer_volume_reader->last_barrel);
+    sprintf(last_overall,"%d",beer_volume_reader->last_overall);
+    tag_database_action_insert(database, rawtime, ACTION_BEER_DRAWN, last_overall, 
+        last_overall);
+    g_debug("volume read: barrel = %d   overall = %d",
+        beer_volume_reader->last_barrel, beer_volume_reader->last_overall);
+}
+
 static void logfunc
 (const gchar *log_domain,GLogLevelFlags log_level, const gchar *message, gpointer user_data)
 {
@@ -67,6 +83,7 @@ int main(int argc, char *argv[])
     struct RfidTagReader *tag_reader;
     struct TagDatabase *database;
     struct NetworkServer *server;
+    struct BeerVolumeReader *volume_reader;
     GMainLoop *loop;
     struct CmdOptions options;
     int i;
@@ -88,6 +105,8 @@ int main(int argc, char *argv[])
         }
     }
 
+//    volume_reader = beer_volume_reader_new(config.beer_volume_reader);
+//    beer_volume_reader_set_callback(volume_reader, volume_read, database);
     server = network_server_new(database);
     pthread_create(&led_thread,NULL,(void*)&ledMatrixThread,NULL);
     loop = g_main_loop_new(NULL,FALSE);
@@ -96,3 +115,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+

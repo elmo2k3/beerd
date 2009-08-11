@@ -3,7 +3,7 @@ CFLAGS = `pkg-config --cflags glib-2.0 sqlite3` -g -Wall
 
 .PHONY: clean
 
-beerd: beerd.o configfile.o rfid_tag_reader.o tag_database.o misc.o network.o commands.o commandline.o led_routines.o
+beerd: beerd.o configfile.o rfid_tag_reader.o tag_database.o misc.o network.o commands.o commandline.o led_routines.o beer_volume_reader.o
 
 beerd.o: beerd.c beerd.h
 configfile.o: configfile.c configfile.h
@@ -14,6 +14,7 @@ network.o: network.c network.h
 commands.o: commands.c commands.h
 commandline.o: commandline.c commandline.h
 led_routines.o: led_routines.c led_routines.h
+beer_volume_reader.o: beer_volume_reader.c beer_volume_reader.h
 
 clean:
 	$(RM) *.o beerd

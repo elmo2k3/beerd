@@ -24,6 +24,8 @@
  */
 
 #define CONFIG_DEFAULT_RFID_SERIAL_PORT "/dev/ttyUSB0"
+#define CONFIG_DEFAULT_BEER_VOLUME_READER "/dev/ttyUSB2"
+
 
 // how many seconds to wait, before the same tag is recognized again?
 #define CONFIG_DEFAULT_RFID_TIMEOUT 5
@@ -49,6 +51,7 @@ struct _config
 {
 	int num_rfid_readers;
 	char rfid_serial_port[MAX_READERS][128]; /**< serial device for rfid tag reader */
+	char beer_volume_reader[128];
 	int rfid_timeout;			/**< timeout in seconds for logging the same tag */
 	char sqlite_file[128];		/**< location of the sqlite database file */
 	int server_port;			/**< port the server will listen on tcp */

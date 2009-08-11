@@ -31,10 +31,10 @@
 
 #include "configfile.h"
 
-#define NUM_PARAMS 13
+#define NUM_PARAMS 14
 static gchar *config_params[NUM_PARAMS] = { "rfid_serial_port", "rfid_timeout", "db_file",
 	"port","max_clients", "use_sqlite", "use_mysql", "mysql_host", "mysql_database",
-	"mysql_user", "mysql_password","led_matrix_ip","led_matrix_port"};
+	"mysql_user", "mysql_password","led_matrix_ip","led_matrix_port","beer_volume_port"};
 
 int config_save(char *conf)
 {
@@ -162,6 +162,10 @@ int config_load(char *conf)
 						break;
 				/* led matrix port*/
 				case 12: config.led_matrix_port = atoi(value);
+						break;
+				/* beer volume reader (by Mic) */
+				case 13: strncpy(config.beer_volume_reader, value,
+							sizeof(config.beer_volume_reader));
 						break;
 
 			}

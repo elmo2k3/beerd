@@ -38,7 +38,8 @@
 
 enum action
 {
-    ACTION_TAG_READ
+    ACTION_TAG_READ,
+    ACTION_BEER_DRAWN
 };
 
 struct TagDatabase
