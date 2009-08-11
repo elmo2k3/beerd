@@ -47,15 +47,18 @@ static gboolean serialReceive
         {
 			beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
         }
-		if(buf[i] == '\r')
+		if(buf[i] == '\n')
 		{
 			char *divider;
 			divider = strtok(beer_volume_reader->buf, ";");
-			beer_volume_reader->last_barrel = atoi (divider);
+			if(divider)
+				beer_volume_reader->last_barrel = atoi (divider);
 			divider = strtok(NULL, beer_volume_reader->buf);
-			beer_volume_reader->last_overall = atoi (divider);
+			if(divider)
+				beer_volume_reader->last_overall = atoi (divider);
 			beer_volume_reader->callback(beer_volume_reader, 
 				beer_volume_reader->user_data);
+			beer_volume_reader->buf_position = 0;
 		}
     }
     return TRUE;
@@ -76,8 +79,8 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 	newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
 	newtio.c_iflag = (ICANON);
 	tcflush(fd, TCIFLUSH);
-	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
-		return NULL;
+//	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
+//		return NULL;
     
 	struct BeerVolumeReader *beer_volume_reader_to_return = g_new0(struct BeerVolumeReader, 1);
 

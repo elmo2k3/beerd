@@ -33,13 +33,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 #include "led_routines.h"
 #include "fonts/arial_bold_14.h"
-#include "fonts/arial_8.h"
-#include "fonts/Comic_8.h"
-#include "fonts/Comic_9.h"
-#include "fonts/Comic_10.h"
+//#include "fonts/arial_8.h"
+//#include "fonts/Comic_8.h"
+//#include "fonts/Comic_9.h"
+//#include "fonts/Comic_10.h"
 #include "configfile.h"
 
 static uint16_t charGetStart(char c);
