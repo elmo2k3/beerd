@@ -51,10 +51,14 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
             sprintf(buf,"\b~~~~~\a %s \rdraws a b33r",user.nick);
             ledPushToStack(buf, 1, 2);
         }
+
     }
     else
     {
         g_debug("tag unknown");
+        char buf[1024];
+        sprintf(buf,"\r~~~UNAUTHORIZED TAG SCANNED!!~~~",user.nick);
+        ledPushToStack(buf, 1, 2);
     }
 }
 

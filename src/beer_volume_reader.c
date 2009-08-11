@@ -79,9 +79,11 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 	newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
 	newtio.c_iflag = (ICANON);
 	tcflush(fd, TCIFLUSH);
-//	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
+	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
+	{
 //		return NULL;
-    
+    }
+
 	struct BeerVolumeReader *beer_volume_reader_to_return = g_new0(struct BeerVolumeReader, 1);
 
 	beer_volume_reader_to_return->buf_position = 0;
@@ -89,7 +91,14 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
     g_io_add_watch(serial_device_chan, G_IO_IN, 
 		(GIOFunc)serialReceive, beer_volume_reader_to_return);
 	g_io_add_watch(serial_device_chan, G_IO_ERR, (GIOFunc)exit, NULL);
+	beer_volume_reader_to_return->channel = serial_device_chan;
     g_io_channel_unref(serial_device_chan);
 
 	return beer_volume_reader_to_return;
+}
+
+void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, const char open)
+{
+
+	g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
 }

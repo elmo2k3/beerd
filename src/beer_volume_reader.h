@@ -32,6 +32,7 @@
 struct BeerVolumeReader
 {
 	char buf[1024];
+	GIOChannel *channel;	
 	int buf_position;
 	int last_barrel;
 	int last_overall;
@@ -41,5 +42,6 @@ struct BeerVolumeReader
 
 extern struct BeerVolumeReader *beer_volume_reader_new(char *serial_device);
 extern void beer_volume_reader_set_callback(struct BeerVolumeReader *beer_reader, void *callback, void *user_data);
+extern void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, const char open);
 
 #endif
