@@ -26,7 +26,7 @@
 #include "configfile.h"
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
-#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB)"
+#define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB, user_id INTEGER PRIMARY KEY)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT)"
 #define CREATE_ADMIN_USER "INSERT INTO users (nick, password, permission) VALUES ('admin','600982cf9c0c41e12df616d2a9a72d675345ced7',2)"
 
