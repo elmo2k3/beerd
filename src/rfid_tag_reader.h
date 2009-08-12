@@ -25,6 +25,7 @@
 
 #include <glib.h>
 #include "tag_database.h"
+#include "beer_volume_reader.h"
 
 /**
  *	struct for one rfid tag reader
@@ -39,6 +40,7 @@ struct RfidTagReader
 	gboolean timeout_active; /**< timeout currently active? */
 	void (*callback)(void*,void*); /** function to call after tag was successfully scanned */
 	void *user_data; /** data to pass to the function that is called */
+        struct BeerVolumeReader *beer_volume_reader;
 };
 
 /**

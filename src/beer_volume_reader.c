@@ -52,10 +52,10 @@ static gboolean serialReceive
 			char *divider;
 			divider = strtok(beer_volume_reader->buf, ";");
 			if(divider)
-				beer_volume_reader->last_barrel = atoi (divider);
+				beer_volume_reader->last_overall = atoi (divider);
 			divider = strtok(NULL, beer_volume_reader->buf);
 			if(divider)
-				beer_volume_reader->last_overall = atoi (divider);
+				beer_volume_reader->last_barrel = atoi (divider);
 			beer_volume_reader->callback(beer_volume_reader, 
 				beer_volume_reader->user_data);
 			beer_volume_reader->buf_position = 0;
@@ -69,7 +69,8 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
     int fd;
 	struct termios newtio;
 	/* open the device */
-	fd = open(serial_device, O_RDONLY | O_NOCTTY | O_NDELAY );
+	//fd = open(serial_device, O_RDONLY | O_NOCTTY | O_NDELAY );
+	fd = open(serial_device, O_RDWR |O_NOCTTY | O_NDELAY );
 	if (fd <0) 
     {
 		return NULL;
@@ -101,4 +102,5 @@ void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, cons
 {
 
 	g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
+	g_io_channel_flush(beer_reader->channel, NULL);
 }

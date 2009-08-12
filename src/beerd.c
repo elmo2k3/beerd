@@ -50,6 +50,7 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
             g_debug("tag known: nick = %s", user.nick);
             sprintf(buf,"\b~~~~~\a %s \rdraws a b33r",user.nick);
             ledPushToStack(buf, 1, 2);
+            beer_volume_reader_control_valve(tag_reader->beer_volume_reader, 'e');
         }
 
     }
@@ -73,8 +74,10 @@ void volume_read(struct BeerVolumeReader *beer_volume_reader, void *user_data)
     sprintf(last_overall,"%d",beer_volume_reader->last_overall);
     tag_database_action_insert(database, rawtime, ACTION_BEER_DRAWN, last_barrel, 
         last_overall);
+    
     g_debug("volume read: barrel = %d   overall = %d",
         beer_volume_reader->last_barrel, beer_volume_reader->last_overall);
+    beer_volume_reader_control_valve(beer_volume_reader, 'a');
 }
 
 static void logfunc
@@ -111,6 +114,9 @@ int main(int argc, char *argv[])
 
     volume_reader = beer_volume_reader_new(config.beer_volume_reader);
     beer_volume_reader_set_callback(volume_reader, volume_read, database);
+    tag_reader->beer_volume_reader = volume_reader;
+    beer_volume_reader_control_valve(volume_reader, 'a');
+
     server = network_server_new(database);
     pthread_create(&led_thread,NULL,(void*)&ledMatrixThread,NULL);
     loop = g_main_loop_new(NULL,FALSE);
