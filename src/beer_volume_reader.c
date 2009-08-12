@@ -43,17 +43,14 @@ static gboolean serialReceive
 
     for(i=0; i < bytes_read; i++)
     {
-        if(buf[i] > 47 && buf[i] < 91) // we want to parse hex data only
-        {
-			beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
-        }
+		beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
 		if(buf[i] == '\n')
 		{
 			char *divider;
 			divider = strtok(beer_volume_reader->buf, ";");
 			if(divider)
 				beer_volume_reader->last_overall = atoi (divider);
-			divider = strtok(NULL, beer_volume_reader->buf);
+			divider = strtok(NULL, ";");
 			if(divider)
 				beer_volume_reader->last_barrel = atoi (divider);
 			beer_volume_reader->callback(beer_volume_reader, 
@@ -100,7 +97,9 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 
 void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, const char open)
 {
-
-	g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
-	g_io_channel_flush(beer_reader->channel, NULL);
+	if(beer_reader)
+	{
+		g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
+		g_io_channel_flush(beer_reader->channel, NULL);
+	}
 }

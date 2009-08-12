@@ -113,9 +113,17 @@ int main(int argc, char *argv[])
     }
 
     volume_reader = beer_volume_reader_new(config.beer_volume_reader);
-    beer_volume_reader_set_callback(volume_reader, volume_read, database);
-    tag_reader->beer_volume_reader = volume_reader;
-    beer_volume_reader_control_valve(volume_reader, 'a');
+    if(volume_reader)
+    {
+        beer_volume_reader_set_callback(volume_reader, volume_read, database);
+        tag_reader->beer_volume_reader = volume_reader;
+        beer_volume_reader_control_valve(volume_reader, 'a');
+    }
+    else
+    {
+        sprintf(stderr,"could not connect to valve reader\n");
+        return -1;
+    }
 
     server = network_server_new(database);
     pthread_create(&led_thread,NULL,(void*)&ledMatrixThread,NULL);

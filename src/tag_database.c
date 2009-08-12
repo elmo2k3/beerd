@@ -27,7 +27,7 @@
 
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
 #define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB, user_id INTEGER PRIMARY KEY)"
-#define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT)"
+#define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT, action_value3 TEXT)"
 #define CREATE_ADMIN_USER "INSERT INTO users (nick, password, permission) VALUES ('admin','600982cf9c0c41e12df616d2a9a72d675345ced7',2)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
@@ -39,10 +39,11 @@
 #define SELECT_USER_NUM "SELECT count(*) FROM users"
 #define SELECT_TAG_NUM "SELECT count(*) FROM tags"
 #define SELECT_ACTION_NUM "SELECT count(*) FROM actions"
+#define SELECT_ACTIONS_LAST_DRAW "SELECT action_value1 FROM actions WHERE action_id=1 ORDER BY timestamp desc LIMIT 1"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
-#define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES (?,?,?,?)"
+#define INSERT_ACTION_QUERY "INSERT INTO actions (timestamp, action_id, action_value1, action_value2, action_value3) VALUES (?,?,?,?,?)"
 #define INSERT_USER_QUERY "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission,password) VALUES (?,?,?,?,?,?,?,?,?,?)"
 #define UPDATE_USER_QUERY "UPDATE users SET name=?, surname=?, nick=?, email=?, age=?, weight=?, size=?, gender=?, permission=?, password=? WHERE rowid=?"
 #define UPDATE_USER_QUERY_WO_PW "UPDATE users SET name=?, surname=?, nick=?, email=?, age=?, weight=?, size=?, gender=?, permission=? WHERE rowid=?"
@@ -283,6 +284,31 @@ gint tag_database_action_insert
 {
 	int rc;
 	sqlite3_stmt *stmt;
+	int differential_beer = 0;
+	
+	if(action_id == ACTION_BEER_DRAWN)
+	{
+		g_debug("selecting last draw action");	
+		rc = sqlite3_prepare_v2(database->db, SELECT_ACTIONS_LAST_DRAW, -1, &stmt, NULL);
+		if(rc != SQLITE_OK)
+		{
+			g_debug(database->error_string,"sql error SELECT_ACTIONS_LAST_DRAW\n");
+			return 0;
+		}
+		rc = sqlite3_step(stmt);
+		if(rc == SQLITE_ROW)
+		{
+			g_debug("actual: %d old: %d", atoi(value1), (int)sqlite3_column_int64(stmt, 0));
+			differential_beer = atoi(value1) - (int)sqlite3_column_int64(stmt,0);
+			sqlite3_finalize(stmt);
+			g_debug("differential beer = %d",differential_beer);
+		}
+		else
+		{
+			sqlite3_finalize(stmt);
+		}
+	}
+
 	
 	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, 1024, &stmt, NULL);
 	if(rc != SQLITE_OK)
@@ -294,6 +320,17 @@ gint tag_database_action_insert
 	sqlite3_bind_int64(stmt, 2, (sqlite3_int64)action_id);
 	sqlite3_bind_text(stmt, 3, value1, -1, NULL);
 	sqlite3_bind_text(stmt, 4, value2, -1, NULL);
+	if(action_id == ACTION_BEER_DRAWN)
+	{
+		char buf[128];
+		sprintf(buf,"%d",differential_beer);
+		sqlite3_bind_text(stmt, 5, buf, -1, NULL);
+	}
+	else
+	{
+		sqlite3_bind_text(stmt, 5, "", -1, NULL);
+	}
+
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	
