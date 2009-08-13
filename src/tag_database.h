@@ -87,6 +87,12 @@ struct TagAction
     gchar action_value2[128];
 };
 
+struct TagLiters
+{
+    gchar tagid[20];
+    int liters;
+};
+
 extern struct TagDatabase *tag_database_new
 (char *filename);
 
@@ -131,4 +137,8 @@ extern gint tag_database_user_get_all(struct TagDatabase *database, struct TagUs
 extern gint tag_database_tags_get_all(struct TagDatabase *database, struct Tag **tags);
 extern gint tag_database_actions_get_all(struct TagDatabase *database, struct TagAction **actions);
 
+extern gint tag_database_get_liters_per_tag
+(struct TagDatabase *database, struct TagLiters **liters, time_t timestamp);
+
 #endif
+

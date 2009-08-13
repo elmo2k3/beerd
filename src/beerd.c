@@ -31,6 +31,8 @@
 
 pthread_t led_thread;
 
+char last_message[1024];
+
 void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 {
     struct TagUser user;
@@ -47,12 +49,40 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
         if(tag_database_user_get_by_tag(database, tag_reader->tagid, &user))
         {
             char buf[1024];
+            struct TagLiters *tagliters;
+            struct TagUser temp_user;
+            int liters = 0;
+            int num;
+            int i;
+        
+            num = tag_database_get_liters_per_tag(database, &tagliters, 1250157600);
+            for(i=0;i<num;i++)
+            {
+                if(tag_database_user_get_by_tag(database, tagliters[i].tagid, &temp_user))
+                {
+                    if(!g_strcmp0(user.nick, temp_user.nick))
+                    {
+                        liters += tagliters[i].liters;
+                    }
+                }
+            }
+            if(num)
+                g_free(tagliters);
+
             g_debug("tag known: nick = %s", user.nick);
-            sprintf(buf,"\b~~~~~\a %s \rdraws a b33r",user.nick);
-            ledPushToStack(buf, 1, 2);
+            sprintf(buf,"\b~~~~~\a %s \rdraws a b33r \a %s \rdrank \a%2.2f\bL\r today",
+                user.nick, user.nick, (float)liters/100.0);
+            if(g_strcmp0(last_message, buf))
+                ledPushToStack(buf, 1, 1);
+            g_strlcpy(last_message, buf, 1024);
             beer_volume_reader_control_valve(tag_reader->beer_volume_reader, VALVE_OPEN);
-            g_timeout_add_seconds(30, (GSourceFunc)beer_volume_reader_close_valve,
-                tag_reader->beer_volume_reader);
+            if(tag_reader->beer_volume_reader)
+            {
+                g_source_remove(tag_reader->beer_volume_reader->timeout_source);
+                tag_reader->beer_volume_reader->timeout_source = 
+                    g_timeout_add_seconds(30, (GSourceFunc)beer_volume_reader_close_valve,
+                    tag_reader->beer_volume_reader);
+            }
         }
 
     }
@@ -80,6 +110,11 @@ void volume_read(struct BeerVolumeReader *beer_volume_reader, void *user_data)
     g_debug("volume read: barrel = %d   overall = %d",
         beer_volume_reader->last_barrel, beer_volume_reader->last_overall);
     beer_volume_reader_control_valve(beer_volume_reader, VALVE_CLOSE);
+    
+    if(g_source_remove(beer_volume_reader->timeout_source))
+        g_debug("removed timeout source");
+    else
+        g_debug("not removed timeout source");
 }
 
 static void logfunc

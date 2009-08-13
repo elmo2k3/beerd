@@ -40,6 +40,7 @@ struct BeerVolumeReader
 	int last_barrel;
 	int last_overall;
 	time_t last_time_opened;
+	guint timeout_source;
 	void (*callback)(void*,void*); /** function to call after got volume */
 	void *user_data; /** data to pass to the function that is called */
 };

@@ -71,7 +71,8 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 	struct termios newtio;
 	/* open the device */
 	//fd = open(serial_device, O_RDONLY | O_NOCTTY | O_NDELAY );
-	fd = open(serial_device, O_RDWR |O_NOCTTY | O_NDELAY );
+	//fd = open(serial_device, O_RDWR |O_NOCTTY | O_NDELAY );
+	fd = open(serial_device, O_RDWR |O_NOCTTY );
 	if (fd <0) 
     {
 		return NULL;
@@ -80,10 +81,11 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 	memset(&newtio, 0, sizeof(newtio)); /* clear struct for new port settings */
 	newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
 	newtio.c_iflag = (ICANON);
+	newtio.c_oflag = 0;
 	tcflush(fd, TCIFLUSH);
 	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
 	{
-//		return NULL;
+		return NULL;
     }
 
 	struct BeerVolumeReader *beer_volume_reader_to_return = g_new0(struct BeerVolumeReader, 1);
@@ -118,5 +120,6 @@ void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, cons
 
 void beer_volume_reader_close_valve(struct BeerVolumeReader *beer_reader)
 {
+	g_debug("drawing timeout!");
 	beer_volume_reader_control_valve(beer_reader, VALVE_CLOSE);
 }

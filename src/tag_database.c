@@ -40,6 +40,8 @@
 #define SELECT_TAG_NUM "SELECT count(*) FROM tags"
 #define SELECT_ACTION_NUM "SELECT count(*) FROM actions"
 #define SELECT_ACTIONS_LAST_DRAW "SELECT action_value1 FROM actions WHERE action_id=1 ORDER BY timestamp desc LIMIT 1"
+#define SELECT_ALL_DRAWINGS "SELECT timestamp, action_value1 FROM actions WHERE action_id=0 AND timestamp >=?"
+#define SELECT_LITERS_BY_TIME "SELECT sum(action_value3) FROM actions WHERE timestamp >? AND timestamp <?"
 
 #define SELECT_ACTION_LAST_READ "SELECT timestamp,action_value1 FROM actions WHERE action_id=? order by timestamp desc LIMIT 1"
 
@@ -168,7 +170,7 @@ gint tag_database_tag_exists(struct TagDatabase *database, gchar *tagid)
 	int rc;
 	sqlite3_stmt *stmt;
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
@@ -188,7 +190,7 @@ static sqlite_int64 tag_database_get_user_id(struct TagDatabase *database, gchar
 	sqlite_int64 user_id;
 	sqlite3_stmt *stmt;
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_TAG_QUERY\n");
@@ -219,7 +221,7 @@ gint tag_database_user_get_by_tag
 		return FALSE;
 	}
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
@@ -252,7 +254,7 @@ gint tag_database_user_get_by_id
 	int rc;
 	sqlite3_stmt *stmt;
 
-	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_QUERY\n");
@@ -310,7 +312,7 @@ gint tag_database_action_insert
 	}
 
 	
-	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, INSERT_ACTION_QUERY, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error INSERT_ACTION_QUERY\n");
@@ -373,7 +375,7 @@ gchar *tag_database_tag_last_read
 	sqlite3_stmt *stmt;
 	gchar *ret;
 	
-	rc = sqlite3_prepare_v2(database->db, SELECT_ACTION_LAST_READ, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_ACTION_LAST_READ, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_ACTION_LAST_READ\n");
@@ -401,7 +403,7 @@ static gint tag_database_nick_exists
 	int rc;
 	sqlite3_stmt *stmt;
 	
-	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_BY_NICK\n");
@@ -562,7 +564,7 @@ extern gint tag_database_user_get_permission
 	gint permission;
 	gchar buffer[512];
 	
-	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, 1024, &stmt, NULL);
+	rc = sqlite3_prepare_v2(database->db, SELECT_USER_BY_NICK, -1, &stmt, NULL);
 	if(rc != SQLITE_OK)
 	{
 		g_sprintf(database->error_string,"sql error SELECT_USER_BY_NICK\n");
@@ -754,4 +756,101 @@ extern gint tag_database_actions_get_all(struct TagDatabase *database, struct Ta
 	return num;
 }
 
-extern gint tag_database_actions_get_all(struct TagDatabase *database, struct TagAction **actions);
+gint tag_database_get_liters_per_tag
+(struct TagDatabase *database, struct TagLiters **liters, time_t timestamp)
+{
+	struct _drawing
+	{
+		time_t timestamp;
+		gchar tagid[20];
+	}*p_drawing, *p_drawing_last;
+	
+	int rc;
+	sqlite3_stmt *stmt;
+	GList *drawing_list = NULL;
+	p_drawing = NULL;
+	p_drawing_last = NULL;
+	int num_tags;
+	struct TagLiters *liter;
+	int p;
+	
+	rc = sqlite3_prepare_v2(database->db, SELECT_TAG_NUM, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_TAG_NUM\n");
+		return 0;
+	}
+	rc = sqlite3_step(stmt);
+	if(rc == SQLITE_ROW)
+	{
+		num_tags = (gint)sqlite3_column_int64(stmt,0);
+		if(num_tags)
+		{
+			liter = g_new0(struct TagLiters, num_tags);
+		}
+		else
+			liter = NULL;
+	}
+	sqlite3_finalize(stmt);
+
+	rc = sqlite3_prepare_v2(database->db, SELECT_ALL_DRAWINGS, -1, &stmt, NULL);
+	if(rc != SQLITE_OK)
+	{
+		g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+		return 0;
+	}
+	sqlite3_bind_int64(stmt, 1, timestamp);
+	while(sqlite3_step(stmt) == SQLITE_ROW)
+	{
+		p_drawing = g_new0(struct _drawing, 1);
+		p_drawing->timestamp = (gint)sqlite3_column_int64(stmt,0);
+		g_strlcpy(p_drawing->tagid, (gchar*)sqlite3_column_text(stmt,1), 
+			sizeof(p_drawing->tagid));
+		drawing_list = g_list_prepend( drawing_list, p_drawing);
+	}
+	drawing_list = g_list_reverse(drawing_list);
+	sqlite3_finalize(stmt);
+
+	for(p=0; p < g_list_length(drawing_list); p++)
+	{
+		p_drawing = g_list_nth_data(drawing_list,p);
+		if(p_drawing_last)
+		{
+			sqlite3_prepare_v2(database->db, SELECT_LITERS_BY_TIME, -1, &stmt, NULL);
+			sqlite3_bind_int64(stmt, 1, p_drawing_last->timestamp);
+			sqlite3_bind_int64(stmt, 2, p_drawing->timestamp);
+			if(sqlite3_step(stmt) == SQLITE_ROW)
+			{
+				int i;
+				gint liters;
+				liters = (gint)sqlite3_column_int64(stmt,0);
+//				g_debug("got %d ml for %s",liters*10, p_drawing_last->tagid);
+				for(i=0;i<num_tags;i++)
+				{
+					if(liter[i].tagid[0])
+					{
+						if(!g_strcmp0(p_drawing_last->tagid, liter[i].tagid))
+						{
+							liter[i].liters += liters;
+							break;
+						}
+					}
+					else
+					{
+						g_strlcpy(liter[i].tagid, p_drawing_last->tagid, 
+							sizeof(liter[i].tagid));
+						liter[i].liters = liters;
+						break;
+					}
+				}
+			}
+			sqlite3_finalize(stmt);
+		}
+		p_drawing_last = p_drawing;
+	}
+	*liters = liter;
+	g_list_free(drawing_list);
+	return num_tags;
+}
+
+

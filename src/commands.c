@@ -48,8 +48,9 @@ static enum commands_status action_get_all_tags(struct client *client, int argc,
 static enum commands_status action_get_all_actions(struct client *client, int argc, char **argv);
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv);
 static enum commands_status action_update_user(struct client *client, int argc, char **argv);
+static enum commands_status action_get_all_tagliters(struct client *client, int argc, char **argv);
 
-#define NUM_COMMANDS 14
+#define NUM_COMMANDS 15
 static struct command commands[] = {
     {"commands", 0, 0,      NETWORK_CLIENT_PERMISSION_NONE, action_commands},
     {"last_tagid", 0, 0,    NETWORK_CLIENT_PERMISSION_READ, action_last_tagid},
@@ -64,7 +65,8 @@ static struct command commands[] = {
     {"get_all_actions",0,0, NETWORK_CLIENT_PERMISSION_READ, action_get_all_actions},
     {"get_auth_string",0,0, NETWORK_CLIENT_PERMISSION_NONE, action_get_auth_string},
     {"update_user",11,11, NETWORK_CLIENT_PERMISSION_ADMIN, action_update_user},
-    {"user_insert_with_tag",12,12, NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_user_with_tag}
+    {"user_insert_with_tag",12,12, NETWORK_CLIENT_PERMISSION_ADMIN, action_insert_user_with_tag},
+    {"get_all_tagliters",0,1, NETWORK_CLIENT_PERMISSION_READ, action_get_all_tagliters},
     };
 
 static enum commands_status action_get_auth_string(struct client *client, int argc, char **argv)
@@ -103,6 +105,33 @@ static enum commands_status action_get_all_tags(struct client *client, int argc,
     }
     if(num)
         g_free(tags);
+    return COMMANDS_OK;
+}
+
+static enum commands_status action_get_all_tagliters(struct client *client, int argc, char **argv)
+{
+    struct TagLiters *tagliters;
+    gint num;
+    int i;
+    struct TagUser user;
+    
+    if(argc == 1)
+    {
+        num = tag_database_get_liters_per_tag(client->database, &tagliters, atoi(argv[1]));
+    }
+    else
+    {
+        num = tag_database_get_liters_per_tag(client->database, &tagliters, 0);
+    }
+    for(i=0;i<num;i++)
+    {
+        network_client_printf(client,"tagid: %s\r\n",tagliters[i].tagid);
+        if(tag_database_user_get_by_tag(client->database, tagliters[i].tagid, &user))
+            network_client_printf(client,"user: %s\r\n", user.nick);
+        network_client_printf(client,"liters: %d\r\n",tagliters[i].liters);
+    }
+    if(num)
+        g_free(tagliters);
     return COMMANDS_OK;
 }
 
