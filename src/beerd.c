@@ -55,7 +55,7 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
             int num;
             int i;
         
-            num = tag_database_get_liters_per_tag(database, &tagliters, 1250157600);
+            num = tag_database_get_liters_per_tag(database, &tagliters, time(NULL)-43200);
             for(i=0;i<num;i++)
             {
                 if(tag_database_user_get_by_tag(database, tagliters[i].tagid, &temp_user))
