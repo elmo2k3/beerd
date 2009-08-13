@@ -40,11 +40,11 @@ static gboolean serialReceive
     gint i;
     g_io_channel_read_chars(channel, buf, sizeof(buf), &bytes_read, NULL);
     buf[bytes_read] = '\0';
+	g_debug("volume reader read %s",buf);
 
     for(i=0; i < bytes_read; i++)
     {
-		beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
-		if(buf[i] == '\n')
+		if(buf[i] == '\r')
 		{
 			char *divider;
 			divider = strtok(beer_volume_reader->buf, ";");
@@ -56,6 +56,10 @@ static gboolean serialReceive
 			beer_volume_reader->callback(beer_volume_reader, 
 				beer_volume_reader->user_data);
 			beer_volume_reader->buf_position = 0;
+		}
+		else if(buf[i] > 47 || buf[i] < 60)
+		{
+			beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
 		}
     }
     return TRUE;
@@ -99,7 +103,20 @@ void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, cons
 {
 	if(beer_reader)
 	{
+		GIOStatus status;	
 		g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
-		g_io_channel_flush(beer_reader->channel, NULL);
+		if((status=g_io_channel_flush(beer_reader->channel, NULL) != G_IO_STATUS_NORMAL))
+		{
+			g_debug("flush failed %d",status);
+		}
 	}
+	else
+	{
+		g_debug("why is beer_reader == NULL?");
+	}
+}
+
+void beer_volume_reader_close_valve(struct BeerVolumeReader *beer_reader)
+{
+	beer_volume_reader_control_valve(beer_reader, VALVE_CLOSE);
 }

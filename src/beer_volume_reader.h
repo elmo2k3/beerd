@@ -26,6 +26,9 @@
 #include <glib.h>
 #include "tag_database.h"
 
+#define VALVE_OPEN 'e'
+#define VALVE_CLOSE 'a'
+
 /**
  *	struct for one rfid tag reader
  */
@@ -36,6 +39,7 @@ struct BeerVolumeReader
 	int buf_position;
 	int last_barrel;
 	int last_overall;
+	time_t last_time_opened;
 	void (*callback)(void*,void*); /** function to call after got volume */
 	void *user_data; /** data to pass to the function that is called */
 };
@@ -43,5 +47,6 @@ struct BeerVolumeReader
 extern struct BeerVolumeReader *beer_volume_reader_new(char *serial_device);
 extern void beer_volume_reader_set_callback(struct BeerVolumeReader *beer_reader, void *callback, void *user_data);
 extern void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, const char open);
+extern void beer_volume_reader_close_valve(struct BeerVolumeReader *beer_reader);
 
 #endif

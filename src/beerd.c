@@ -50,7 +50,9 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
             g_debug("tag known: nick = %s", user.nick);
             sprintf(buf,"\b~~~~~\a %s \rdraws a b33r",user.nick);
             ledPushToStack(buf, 1, 2);
-            beer_volume_reader_control_valve(tag_reader->beer_volume_reader, 'e');
+            beer_volume_reader_control_valve(tag_reader->beer_volume_reader, VALVE_OPEN);
+            g_timeout_add_seconds(30, (GSourceFunc)beer_volume_reader_close_valve,
+                tag_reader->beer_volume_reader);
         }
 
     }
@@ -58,7 +60,7 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
     {
         g_debug("tag unknown");
         char buf[1024];
-        sprintf(buf,"\r~~~UNAUTHORIZED TAG SCANNED!!~~~",user.nick);
+        sprintf(buf,"\r~~~UNAUTHORIZED TAG SCANNED!!~~~");
         ledPushToStack(buf, 1, 2);
     }
 }
@@ -77,7 +79,7 @@ void volume_read(struct BeerVolumeReader *beer_volume_reader, void *user_data)
     
     g_debug("volume read: barrel = %d   overall = %d",
         beer_volume_reader->last_barrel, beer_volume_reader->last_overall);
-    beer_volume_reader_control_valve(beer_volume_reader, 'a');
+    beer_volume_reader_control_valve(beer_volume_reader, VALVE_CLOSE);
 }
 
 static void logfunc
@@ -117,11 +119,11 @@ int main(int argc, char *argv[])
     {
         beer_volume_reader_set_callback(volume_reader, volume_read, database);
         tag_reader->beer_volume_reader = volume_reader;
-        beer_volume_reader_control_valve(volume_reader, 'a');
+        beer_volume_reader_control_valve(volume_reader, VALVE_CLOSE);
     }
     else
     {
-        sprintf(stderr,"could not connect to valve reader\n");
+        fprintf(stderr,"could not connect to valve reader\n");
         return -1;
     }
 
