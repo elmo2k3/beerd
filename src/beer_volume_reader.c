@@ -35,7 +35,7 @@ void beer_volume_reader_set_callback(struct BeerVolumeReader *tag_reader, void *
 static gboolean serialReceive
 (GIOChannel *channel, GIOCondition *condition, struct BeerVolumeReader *beer_volume_reader)
 {
-    gchar buf[2048];
+    char buf[2048];
     gsize bytes_read;
     gint i;
     g_io_channel_read_chars(channel, buf, sizeof(buf), &bytes_read, NULL);
@@ -44,20 +44,34 @@ static gboolean serialReceive
 
     for(i=0; i < bytes_read; i++)
     {
-		if(buf[i] == '\r')
+		if(buf[i] == 10)
 		{
+			buf[beer_volume_reader->buf_position+1] = '\0';
+                        g_debug("buf_position = %d", beer_volume_reader->buf_position);
+			g_debug("string to work on: %s",beer_volume_reader->buf);
 			char *divider;
 			divider = strtok(beer_volume_reader->buf, ";");
 			if(divider)
+                        {       
+                                g_debug("part 1 %s", divider);
 				beer_volume_reader->last_overall = atoi (divider);
+                                g_debug("last_overall now is %d",beer_volume_reader->last_overall);
+                        }
 			divider = strtok(NULL, ";");
 			if(divider)
+                        {
+                                g_debug("part 2 %s", divider);
 				beer_volume_reader->last_barrel = atoi (divider);
+                        }
 			beer_volume_reader->callback(beer_volume_reader, 
 				beer_volume_reader->user_data);
 			beer_volume_reader->buf_position = 0;
 		}
-		else if(buf[i] > 47 || buf[i] < 60)
+                else if(buf[i] == 13)
+                {
+                }
+//		else if(buf[i] > 47 || buf[i] < 60)
+		else
 		{
 			beer_volume_reader->buf[beer_volume_reader->buf_position++] = buf[i];
 		}
@@ -106,6 +120,8 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 
 	beer_volume_reader_to_return->buf_position = 0;
     GIOChannel *serial_device_chan = g_io_channel_unix_new(fd_read);
+        g_io_channel_set_encoding(serial_device_chan, NULL, NULL);
+        g_io_channel_set_buffered(serial_device_chan, FALSE);
     g_io_add_watch(serial_device_chan, G_IO_IN, 
 		(GIOFunc)serialReceive, beer_volume_reader_to_return);
 	g_io_add_watch(serial_device_chan, G_IO_ERR, (GIOFunc)exit, NULL);

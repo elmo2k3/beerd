@@ -98,7 +98,7 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
 void volume_read(struct BeerVolumeReader *beer_volume_reader, void *user_data)
 {
     time_t rawtime;
-    char last_barrel[10], last_overall[10];
+    char last_barrel[20], last_overall[20];
     struct TagDatabase *database = (struct TagDatabase*)user_data;
     
     time(&rawtime);
