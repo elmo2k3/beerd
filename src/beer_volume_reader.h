@@ -35,7 +35,8 @@
 struct BeerVolumeReader
 {
 	char buf[1024];
-	GIOChannel *channel;	
+	GIOChannel *channel_read;
+	GIOChannel *channel_write;
 	int buf_position;
 	int last_barrel;
 	int last_overall;

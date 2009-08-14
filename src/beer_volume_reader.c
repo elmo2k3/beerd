@@ -67,13 +67,14 @@ static gboolean serialReceive
 
 struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 {
-    int fd;
+    int fd_read;
+	int fd_write;
 	struct termios newtio;
 	/* open the device */
 	//fd = open(serial_device, O_RDONLY | O_NOCTTY | O_NDELAY );
 	//fd = open(serial_device, O_RDWR |O_NOCTTY | O_NDELAY );
-	fd = open(serial_device, O_RDWR |O_NOCTTY );
-	if (fd <0) 
+	fd_read = open(serial_device, O_RDONLY |O_NOCTTY | O_NONBLOCK);
+	if (fd_read <0) 
     {
 		return NULL;
 	}
@@ -81,21 +82,39 @@ struct BeerVolumeReader *beer_volume_reader_new(char *serial_device)
 	memset(&newtio, 0, sizeof(newtio)); /* clear struct for new port settings */
 	newtio.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
 	newtio.c_iflag = (ICANON);
-	newtio.c_oflag = 0;
-	tcflush(fd, TCIFLUSH);
-	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
+	tcflush(fd_read, TCIFLUSH);
+	if(tcsetattr(fd_read,TCSANOW,&newtio) < 0)
 	{
+//		return NULL;
+    }
+	
+	fd_write = open(serial_device, O_WRONLY |O_NOCTTY | O_NDELAY | O_NONBLOCK );
+	if (fd_write <0) 
+    {
 		return NULL;
+	}
+
+	memset(&newtio, 0, sizeof(newtio)); /* clear struct for new port settings */
+	newtio.c_cflag = B9600 | CS8 ;
+	tcflush(fd_write, TCIFLUSH);
+	if(tcsetattr(fd_write,TCSANOW,&newtio) < 0)
+	{
+//		return NULL;
     }
 
 	struct BeerVolumeReader *beer_volume_reader_to_return = g_new0(struct BeerVolumeReader, 1);
 
 	beer_volume_reader_to_return->buf_position = 0;
-    GIOChannel *serial_device_chan = g_io_channel_unix_new(fd);
+    GIOChannel *serial_device_chan = g_io_channel_unix_new(fd_read);
     g_io_add_watch(serial_device_chan, G_IO_IN, 
 		(GIOFunc)serialReceive, beer_volume_reader_to_return);
 	g_io_add_watch(serial_device_chan, G_IO_ERR, (GIOFunc)exit, NULL);
-	beer_volume_reader_to_return->channel = serial_device_chan;
+	beer_volume_reader_to_return->channel_read = serial_device_chan;
+    g_io_channel_unref(serial_device_chan);
+    
+	serial_device_chan = g_io_channel_unix_new(fd_write);
+	g_io_add_watch(serial_device_chan, G_IO_ERR, (GIOFunc)exit, NULL);
+	beer_volume_reader_to_return->channel_write = serial_device_chan;
     g_io_channel_unref(serial_device_chan);
 
 	return beer_volume_reader_to_return;
@@ -106,8 +125,8 @@ void beer_volume_reader_control_valve(struct BeerVolumeReader *beer_reader, cons
 	if(beer_reader)
 	{
 		GIOStatus status;	
-		g_io_channel_write_chars(beer_reader->channel, &open, sizeof(open), NULL, NULL);
-		if((status=g_io_channel_flush(beer_reader->channel, NULL) != G_IO_STATUS_NORMAL))
+		g_io_channel_write_chars(beer_reader->channel_write, &open, sizeof(open), NULL, NULL);
+		if((status=g_io_channel_flush(beer_reader->channel_write, NULL) != G_IO_STATUS_NORMAL))
 		{
 			g_debug("flush failed %d",status);
 		}

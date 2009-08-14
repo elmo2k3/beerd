@@ -107,7 +107,9 @@ struct RfidTagReader *rfid_tag_reader_new(char *serial_device)
 	newtio.c_iflag = (ICANON);
 	tcflush(fd, TCIFLUSH);
 	if(tcsetattr(fd,TCSANOW,&newtio) < 0)
-		return NULL;
+	{
+//		return NULL;
+	}
     
 	struct RfidTagReader *rfid_tag_reader_to_return = g_new0(struct RfidTagReader, 1);
 
