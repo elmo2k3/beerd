@@ -862,7 +862,7 @@ gint tag_database_get_liters_per_tag
 	return num_tags;
 }
 
-gint tag_database_update_liters(struct TagDatabase *database)
+gboolean tag_database_update_liters(struct TagDatabase *database)
 {
 	int rc;
 	sqlite3_stmt *stmt;
@@ -985,7 +985,7 @@ gint tag_database_update_liters(struct TagDatabase *database)
 	}
 	if(num)
 		g_free(tagliters);
-	return num;
+	return TRUE;
 }
 
 
