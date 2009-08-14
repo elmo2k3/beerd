@@ -28,6 +28,8 @@
 #define CREATE_TABLE_TAGS_QUERY "CREATE TABLE tags ( tag TEXT, user_id INTEGER,permission INTEGER)"
 #define CREATE_TABLE_USERS_QUERY "CREATE TABLE users ( name TEXT, surname TEXT, nick TEXT, email TEXT, age INTEGER, weight INTEGER, size INTEGER, gender INTEGER, permission INTEGER, password TEXT, pic BLOB, user_id INTEGER PRIMARY KEY)"
 #define CREATE_TABLE_ACTIONS_QUERY "CREATE TABLE actions ( timestamp INTEGER, action_id INTEGER, action_value1 TEXT, action_value2 TEXT, action_value3 TEXT)"
+#define CREATE_TABLE_LITERS_12H_QUERY "CREATE TABLE liters_12h ( user_nick TEXT, liters INTEGER)"
+#define CREATE_TABLE_LITERS_OVERALL_QUERY "CREATE TABLE liters_overall ( user_nick TEXT, liters INTEGER)"
 #define CREATE_ADMIN_USER "INSERT INTO users (nick, password, permission) VALUES ('admin','600982cf9c0c41e12df616d2a9a72d675345ced7',2)"
 
 #define SELECT_TAG_QUERY "SELECT * FROM tags WHERE tag=?"
@@ -146,6 +148,13 @@ static int createDatabaseLayout(struct TagDatabase *database)
 		return -1;
 	}
 	rc = sqlite3_exec(database->db, CREATE_ADMIN_USER,  0, 0, &zErrMsg);
+	if(rc != SQLITE_OK)
+	{
+		fprintf(stderr,"sqlerror: %s", zErrMsg);
+		sqlite3_free(zErrMsg);
+		return -1;
+	}
+	rc = sqlite3_exec(database->db, CREATE_TABLE_LITERS_12H_QUERY,  0, 0, &zErrMsg);
 	if(rc != SQLITE_OK)
 	{
 		fprintf(stderr,"sqlerror: %s", zErrMsg);
@@ -851,6 +860,132 @@ gint tag_database_get_liters_per_tag
 	*liters = liter;
 	g_list_free(drawing_list);
 	return num_tags;
+}
+
+gint tag_database_update_liters(struct TagDatabase *database)
+{
+	int rc;
+	sqlite3_stmt *stmt;
+	
+	struct TagLiters *tagliters;
+	struct TagUser temp_user;
+	int num;
+	int i;
+	
+	rc = sqlite3_prepare_v2(database->db, 
+		"DELETE FROM liters_12h", -1, &stmt, NULL);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	rc = sqlite3_prepare_v2(database->db, 
+		"DELETE FROM liters_overall", -1, &stmt, NULL);
+	rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+
+	num = tag_database_get_liters_per_tag(database, &tagliters, time(NULL)-43200);
+	for(i=0;i<num;i++)
+	{
+		if(tag_database_user_get_by_tag(database, tagliters[i].tagid, &temp_user))
+		{
+			rc = sqlite3_prepare_v2(database->db, 
+				"SELECT liters FROM liters_12h WHERE user_nick=?", -1, &stmt, NULL);
+			if(rc != SQLITE_OK)
+			{
+				g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+				return 0;
+			}
+			sqlite3_bind_text(stmt, 1, temp_user.nick, -1, NULL);
+			rc = sqlite3_step(stmt);
+			if(rc == SQLITE_ROW) // user exists yet
+			{
+				tagliters[i].liters += sqlite3_column_int64(stmt, 1);
+				sqlite3_finalize(stmt);
+				rc = sqlite3_prepare_v2(database->db,
+					"UPDATE liters_12h SET liters=? WHERE user_nick=?", -1, &stmt, NULL);
+				if(rc != SQLITE_OK)
+				{
+					g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+					return 0;
+				}
+				sqlite3_bind_int64(stmt, 1, tagliters[i].liters);
+				sqlite3_bind_text(stmt, 2, temp_user.nick, -1, NULL);
+				sqlite3_step(stmt);
+				sqlite3_finalize(stmt);
+			}
+			else
+			{
+				sqlite3_finalize(stmt);
+				rc = sqlite3_prepare_v2(database->db,
+					"INSERT INTO liters_12h (user_nick,liters) VALUES(?,?)", -1, &stmt, NULL);
+				if(rc != SQLITE_OK)
+				{
+					g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+					return 0;
+				}
+				sqlite3_bind_text(stmt, 1, temp_user.nick, -1, NULL);
+				sqlite3_bind_int64(stmt, 2, tagliters[i].liters);
+				sqlite3_step(stmt);
+				sqlite3_finalize(stmt);
+			}
+		}
+	}
+	if(num)
+		g_free(tagliters);
+	
+	num = tag_database_get_liters_per_tag(database, &tagliters, 0);
+	for(i=0;i<num;i++)
+	{
+		if(tag_database_user_get_by_tag(database, tagliters[i].tagid, &temp_user))
+		{
+			rc = sqlite3_prepare_v2(database->db, 
+				"SELECT liters FROM liters_overall WHERE user_nick=?", -1, &stmt, NULL);
+			if(rc != SQLITE_OK)
+			{
+				g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+					g_debug("sql error SELECT_ALL_DRAWINGS\n");
+				return 0;
+			}
+			sqlite3_bind_text(stmt, 1, temp_user.nick, -1, NULL);
+			rc = sqlite3_step(stmt);
+			if(rc == SQLITE_ROW) // user exists yet
+			{
+				int old_liters;
+				old_liters = (int)sqlite3_column_int64(stmt, 0);
+				tagliters[i].liters += old_liters;
+				sqlite3_finalize(stmt);
+				rc = sqlite3_prepare_v2(database->db,
+					"UPDATE liters_overall SET liters=? WHERE user_nick=?", -1, &stmt, NULL);
+				if(rc != SQLITE_OK)
+				{
+					g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+					g_debug("sql error SELECT_ALL_DRAWINGS\n");
+					return 0;
+				}
+				sqlite3_bind_int64(stmt, 1, tagliters[i].liters);
+				sqlite3_bind_text(stmt, 2, temp_user.nick, -1, NULL);
+				sqlite3_step(stmt);
+				sqlite3_finalize(stmt);
+			}
+			else
+			{
+				sqlite3_finalize(stmt);
+				rc = sqlite3_prepare_v2(database->db,
+					"INSERT INTO liters_overall (user_nick,liters) VALUES(?,?)", -1, &stmt, NULL);
+				if(rc != SQLITE_OK)
+				{
+					g_sprintf(database->error_string,"sql error SELECT_ALL_DRAWINGS\n");
+					g_debug("sql error SELECT_ALL_DRAWINGS\n");
+					return 0;
+				}
+				sqlite3_bind_text(stmt, 1, temp_user.nick, -1, NULL);
+				sqlite3_bind_int64(stmt, 2, tagliters[i].liters);
+				sqlite3_step(stmt);
+				sqlite3_finalize(stmt);
+			}
+		}
+	}
+	if(num)
+		g_free(tagliters);
+	return num;
 }
 
 

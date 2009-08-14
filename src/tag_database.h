@@ -140,5 +140,7 @@ extern gint tag_database_actions_get_all(struct TagDatabase *database, struct Ta
 extern gint tag_database_get_liters_per_tag
 (struct TagDatabase *database, struct TagLiters **liters, time_t timestamp);
 
+extern gint tag_database_update_liters(struct TagDatabase *database);
+
 #endif
 

@@ -164,6 +164,10 @@ int main(int argc, char *argv[])
 
     server = network_server_new(database);
     pthread_create(&led_thread,NULL,(void*)&ledMatrixThread,NULL);
+
+//    tag_database_update_liters(database);
+    g_timeout_add_seconds(30, (GSourceFunc)tag_database_update_liters, database);
+
     loop = g_main_loop_new(NULL,FALSE);
 //    g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, logfunc, NULL);
     g_main_loop_run(loop);
