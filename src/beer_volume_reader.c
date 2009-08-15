@@ -44,7 +44,7 @@ static gboolean serialReceive
 
     for(i=0; i < bytes_read; i++)
     {
-		if(buf[i] == 10)
+		if(buf[i] == 13)
 		{
 			buf[beer_volume_reader->buf_position+1] = '\0';
                         g_debug("buf_position = %d", beer_volume_reader->buf_position);
@@ -67,7 +67,7 @@ static gboolean serialReceive
 				beer_volume_reader->user_data);
 			beer_volume_reader->buf_position = 0;
 		}
-                else if(buf[i] == 13)
+                else if(buf[i] == 10)
                 {
                 }
 //		else if(buf[i] > 47 || buf[i] < 60)
