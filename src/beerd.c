@@ -78,7 +78,8 @@ void tag_read(struct RfidTagReader *tag_reader, void *user_data)
             beer_volume_reader_control_valve(tag_reader->beer_volume_reader, VALVE_OPEN);
             if(tag_reader->beer_volume_reader)
             {
-                g_source_remove(tag_reader->beer_volume_reader->timeout_source);
+                if(tag_reader->beer_volume_reader->timeout_source)
+                    g_source_remove(tag_reader->beer_volume_reader->timeout_source);
                 tag_reader->beer_volume_reader->timeout_source = 
                     g_timeout_add_seconds(30, (GSourceFunc)beer_volume_reader_close_valve,
                     tag_reader->beer_volume_reader);

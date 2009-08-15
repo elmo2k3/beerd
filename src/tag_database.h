@@ -24,15 +24,9 @@
  * Sqlite database handling
  */
 
-#define _HAVE_MYSQL
-
 #include <stdio.h>
 #include <glib.h>
 #include <sqlite3.h>
-
-#ifdef _HAVE_MYSQL
-#include <mysql/mysql.h>
-#endif
 
 #include "rfid_tag_reader.h"
 
@@ -44,12 +38,8 @@ enum action
 
 struct TagDatabase
 {
-#ifdef _HAVE_MYSQL
-    MYSQL *mysql;
-#endif
     sqlite3 *db;
     gboolean sqlite_usable;
-    gboolean mysql_usable;
     gchar error_string[1024];
     void (*auth_successfull)(void*);
     void (*auth_failed)(void*);

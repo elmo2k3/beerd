@@ -38,7 +38,8 @@ static gboolean serialReceive
     char buf[2048];
     gsize bytes_read;
     gint i;
-    g_io_channel_read_chars(channel, buf, sizeof(buf), &bytes_read, NULL);
+    while(g_io_channel_read_chars(channel, buf, sizeof(buf), &bytes_read, NULL)
+		== G_IO_STATUS_AGAIN);
     buf[bytes_read] = '\0';
 	g_debug("volume reader read %s",buf);
 

@@ -53,10 +53,6 @@
 #define UPDATE_USER_QUERY_WO_PW "UPDATE users SET name=?, surname=?, nick=?, email=?, age=?, weight=?, size=?, gender=?, permission=? WHERE rowid=?"
 #define INSERT_TAG_QUERY "INSERT INTO tags (tag,user_id,permission) VALUES (?,?,?)"
 
-#define INSERT_ACTION_QUERY_MYSQL "INSERT INTO actions (timestamp, action_id, action_value1, action_value2) VALUES ('%ld','%d','%s','%s')"
-#define INSERT_USER_QUERY_MYSQL "INSERT INTO users (name,surname,nick,email,age,weight,size,gender,permission,password) VALUES ('%s','%s','%s','%s',%d,%d,%d,%d,%d,'%s')"
-#define INSERT_TAG_QUERY_MYSQL "INSERT INTO tags (tag,user_id,permission) VALUES ('%s',%d,'%d')"
-
 static int createDatabaseLayout(struct TagDatabase *database);
 
 extern struct TagDatabase *tag_database_new(char *filename)
@@ -94,30 +90,6 @@ extern struct TagDatabase *tag_database_new(char *filename)
 			}
 		}
 	}
-#ifdef _HAVE_MYSQL
-	if(config.use_mysql)
-	{
-		database->mysql_usable = 1;
-		database->mysql = mysql_init(NULL);
-		
-		if (!mysql_real_connect(database->mysql,
-					config.mysql_host, 
-					config.mysql_user,
-					config.mysql_password,
-					config.mysql_database, 0, NULL, 0))
-		{
-			fprintf(stderr, "%s\r\n", mysql_error(database->mysql));
-			if(!database->sqlite_usable ) // neither sqlite nor mysql usable
-			{
-				sqlite3_close(database->db);
-				g_free(database);
-				return NULL;
-			}
-			else
-				database->mysql_usable = 0;
-		}
-	}
-#endif
 	return database;
 }
 
@@ -334,6 +306,8 @@ gint tag_database_action_insert
 	if(action_id == ACTION_BEER_DRAWN)
 	{
 		char buf[128];
+		if(differential_beer <0)
+			differential_beer = 0;
 		sprintf(buf,"%d",differential_beer);
 		sqlite3_bind_text(stmt, 5, buf, -1, NULL);
 	}
@@ -345,35 +319,6 @@ gint tag_database_action_insert
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	
-	if(database->mysql_usable)
-	{
-		char query[1000], value1_escaped[128], value2_escaped[128];
-
-		mysql_real_escape_string(database->mysql,
-			value1_escaped, value1, strlen(value1));
-		if(value2)
-		{
-			mysql_real_escape_string(database->mysql,
-				value2_escaped, value2, strlen(value2));
-		}
-		else
-		{
-			value2_escaped[1] = '\0';
-		}
-			
-	
-		snprintf(query,999, INSERT_ACTION_QUERY_MYSQL,
-			timestamp,
-			action_id,
-			value1_escaped, value2_escaped);
-		
-		if (mysql_query(database->mysql,query))
-		{
-			   fprintf(stderr, "Failed to insert row, Error: %s\n",
-			              mysql_error(database->mysql));
-		}
-	}
-		
 	return 1;
 }
 
@@ -455,33 +400,6 @@ gint tag_database_user_insert
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	
-	if(database->mysql_usable)
-	{
-		char query[1000], name_escaped[257], surname_escaped[257],
-			nick_escaped[257], email_escaped[257], password_escaped[257];
-
-		mysql_real_escape_string(database->mysql,
-			name_escaped, user->name, strlen(user->name));
-		mysql_real_escape_string(database->mysql,
-			surname_escaped, user->surname, strlen(user->surname));
-		mysql_real_escape_string(database->mysql,
-			nick_escaped, user->nick, strlen(user->nick));
-		mysql_real_escape_string(database->mysql,
-			email_escaped, user->email, strlen(user->email));
-		mysql_real_escape_string(database->mysql,
-			password_escaped, user->password, strlen(user->password));
-
-		sprintf(query, INSERT_USER_QUERY_MYSQL,
-			name_escaped, surname_escaped, nick_escaped, 
-			email_escaped, user->age, user->weight, user->size,
-			user->gender, user->permission, password_escaped);
-			
-		if (mysql_query(database->mysql,query))
-		{
-			   fprintf(stderr, "Failed to insert row, Error: %s\n",
-			              mysql_error(database->mysql));
-		}
-	}
 	return 1;
 }
 
@@ -546,22 +464,6 @@ gint tag_database_tag_insert
 	rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	
-	if(database->mysql_usable)
-	{
-		char query[1000], tagid_escaped[25];
-
-		mysql_real_escape_string(database->mysql,
-			tagid_escaped, tagid, strlen(tagid));
-
-		sprintf(query, INSERT_TAG_QUERY_MYSQL,
-			tagid_escaped, userid, permission);
-			
-		if (mysql_query(database->mysql,query))
-		{
-			   fprintf(stderr, "Failed to insert row, Error: %s\n",
-			              mysql_error(database->mysql));
-		}
-	}
 	return 1;
 }
 

@@ -1,9 +1,10 @@
-LDFLAGS = `pkg-config --libs glib-2.0 sqlite3` -lmysqlclient -L/usr/lib/mysql/
+LDFLAGS = `pkg-config --libs glib-2.0 sqlite3`
 CFLAGS = `pkg-config --cflags glib-2.0 sqlite3` -g -Wall
 
 .PHONY: clean
 
 beerd: beerd.o configfile.o rfid_tag_reader.o tag_database.o misc.o network.o commands.o commandline.o led_routines.o beer_volume_reader.o
+	$(CC) $(LDFLAGS) $?
 
 beerd.o: beerd.c beerd.h
 configfile.o: configfile.c configfile.h
